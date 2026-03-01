@@ -72,10 +72,29 @@ struct PlayerPenaltyCardsView: View {
         if let contract = contract {
             let penaltyCards = getPenaltyCards(for: contract)
             if !penaltyCards.isEmpty {
-                HStack(spacing: -20) {
+                HStack(spacing: 6) {  // Daha rahat boşluk
                     ForEach(penaltyCards, id: \.id) { card in
-                        CardView(card: card, isPlayable: false, isDimmed: false, width: 48)
-                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                        // Ceza Kartı Özel Görünümü (Kutu içinde büyük sembol)
+                        VStack(spacing: -2) {
+                            Text(card.rank.shortName)
+                                .font(.system(size: 16, weight: .black, design: .rounded))
+                            Text(card.suit.symbol)
+                                .font(.system(size: 18))
+                        }
+                        .foregroundColor(
+                            card.suit.isRed ? Color(red: 1, green: 0.2, blue: 0.2) : .black
+                        )
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.white)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                        )
+                        .shadow(color: .black.opacity(0.4), radius: 3, x: 0, y: 2)
                     }
                 }
                 .padding(8)

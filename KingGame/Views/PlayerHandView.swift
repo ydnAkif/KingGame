@@ -42,9 +42,11 @@ struct PlayerHandView: View {
 
                 ZStack {
                     // Sabit etkileşim katmanı (görünmez) - Fare titremesini önler
+                    // Boyutunu uzun tuttuk ki kart yukarı kalktığında fare boşa düşüp animasyonu bozmasın
                     Rectangle()
-                        .fill(Color.clear)
-                        .frame(width: 100, height: 140)
+                        .fill(Color.white.opacity(0.001))
+                        .frame(width: 100, height: 180)
+                        .offset(y: -20)
                         .onHover { hovering in
                             if isPlayable {
                                 withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
