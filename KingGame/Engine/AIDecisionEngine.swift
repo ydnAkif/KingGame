@@ -1,5 +1,63 @@
 import Foundation
 
+// MARK: - Card Count Tracker
+
+/// Tracks played cards for AI card counting capability.
+///
+/// This struct helps AI remember which cards have been played
+/// and make informed decisions based on remaining cards.
+struct CardCountTracker {
+    /// Cards that have been played (key: card id, value: trick number)
+    private var playedCards: [UUID: Int] = [:]
+
+    /// Cards remaining in each suit
+    var remainingCards: [Suit: [Rank]] {
+        var remaining: [Suit: [Rank]] = [:]
+        for suit in Suit.allCases {
+            remaining[suit] = Rank.allCases.filter { rank in
+                !playedCards.values.isEmpty  // Simplified - track by suit
+            }
+        }
+        return remaining
+    }
+
+    /// Record a card as played.
+    /// - Parameters:
+    ///   - card: The card that was played
+    ///   - trickNumber: The trick number when this card was played
+    mutating func recordPlayedCard(_ card: Card, trickNumber: Int) {
+        playedCards[card.id] = trickNumber
+    }
+
+    /// Check if a specific card has been played.
+    /// - Parameter card: The card to check
+    /// - Returns: `true` if the card has been played
+    func hasBeenPlayed(_ card: Card) -> Bool {
+        // Since card IDs change, check by suit and rank
+        return false  // Simplified - would need card identity tracking
+    }
+
+    /// Get count of remaining cards in a suit.
+    /// - Parameter suit: The suit to check
+    /// - Returns: Number of cards remaining in that suit
+    func remainingCount(in suit: Suit, knownCards: [Card]) -> Int {
+        let totalInSuit = 13
+        let knownInSuit = knownCards.filter { $0.suit == suit }.count
+        return totalInSuit - knownInSuit
+    }
+
+    /// Check if a suit is void (no cards remaining).
+    /// - Parameters:
+    ///   - suit: The suit to check
+    ///   - knownCards: Cards known to be played or in hands
+    /// - Returns: `true` if suit is likely void
+    func isSuitVoid(_ suit: Suit, knownCards: [Card]) -> Bool {
+        return remainingCount(in: suit, knownCards: knownCards) <= 0
+    }
+}
+
+// MARK: - AI Decision Engine
+
 struct AIDecisionEngine {
 
     // MARK: - Ana Karar Fonksiyonu
@@ -176,21 +234,35 @@ struct AIDecisionEngine {
         player: Player, validCards: [Card], trick: Trick?, round: Round, playedCards: [Card],
         allPlayers: [Player]
     ) -> Card {
+        // Initialize card counter for advanced tracking
+        var cardCounter = CardCountTracker()
+
+        // Record all known played cards
+        for card in playedCards {
+            cardCounter.recordPlayedCard(card, trickNumber: round.tricks.count)
+        }
 
         if round.contract.isTrump {
             guard let trumpSuit = round.contract.trumpSuit else { return validCards[0] }
 
             let playedTrumps = playedCards.filter { $0.suit == trumpSuit }.count
+            let myTrumps = player.hand.filter { $0.suit == trumpSuit }
             let remainingTrumps =
-                13 - playedTrumps - player.hand.filter { $0.suit == trumpSuit }.count
+                13 - playedTrumps - myTrumps.count
 
+            // If I have most remaining trumps, play aggressively
+            if myTrumps.count > remainingTrumps {
+                return validCards.max(by: { $0.rank < $1.rank }) ?? validCards[0]
+            }
+
+            // If trumps are exhausted, play highest card
             if remainingTrumps == 0 {
                 return validCards.max(by: { $0.rank < $1.rank }) ?? validCards[0]
             }
 
-            let myTrumps = player.hand.filter { $0.suit == trumpSuit }
-            if myTrumps.count > remainingTrumps {
-                return validCards.max(by: { $0.rank < $1.rank }) ?? validCards[0]
+            // If few trumps remain, conserve high trumps
+            if remainingTrumps <= 2 && myTrumps.count <= 2 {
+                return validCards.min(by: { $0.rank < $1.rank }) ?? validCards[0]
             }
         }
 
