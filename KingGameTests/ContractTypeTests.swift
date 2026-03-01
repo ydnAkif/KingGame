@@ -3,6 +3,7 @@ import XCTest
 @testable import KingGame
 
 // MARK: - ContractType Tests
+@MainActor
 final class ContractTypeTests: XCTestCase {
 
     func testContractTypeCount() {

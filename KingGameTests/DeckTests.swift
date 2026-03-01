@@ -3,6 +3,7 @@ import XCTest
 @testable import KingGame
 
 // MARK: - Deck Tests (Basic)
+@MainActor
 final class DeckTests: XCTestCase {
 
     func testDeckInitialization() {

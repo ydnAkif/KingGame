@@ -1,0 +1,36 @@
+{
+  "configurations" : [
+    {
+      "id" : "247FDE0F-3227-426A-8F8C-9C23568B6693",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "IDEPreferLogStreaming",
+        "value" : "YES"
+      }
+    ],
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:KingGame.xcodeproj",
+      "identifier" : "5E9E1E072F5337790001F963",
+      "name" : "KingGame"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:KingGame.xcodeproj",
+        "identifier" : "5E0CF97E2F54B87300C9A24F",
+        "name" : "KingGameTests"
+      }
+    }
+  ],
+  "version" : 1
+}

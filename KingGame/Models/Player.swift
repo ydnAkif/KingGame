@@ -2,7 +2,7 @@ import Combine
 import Foundation
 
 // MARK: - Player Type
-enum PlayerType: Equatable {
+enum PlayerType: Equatable, Sendable {
     case human
     case aiAggressive  // AI-Agresif  (risk eşiği: %35)
     case aiBalanced  // AI-Dengeli  (risk eşiği: %50)

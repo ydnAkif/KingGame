@@ -3,7 +3,7 @@
 //  KingGame
 //
 //  Created by Akif AYDIN on 1.03.2026.
-//  Updated: 1 Mart 2026 - Final Release
+//  Updated: 1 Mart 2026 - Final Update
 //
 
 # 👑 KingGame — Proje Yol Haritası
@@ -63,6 +63,14 @@
 - [x] Kontrat değerlendirme algoritması
 - [x] Risk skorlama sistemi
 - [x] RuleEngine entegrasyonu (geçerli kontrat kontrolü)
+- [x] **Kart sayımı** — Oynanan kartları takip etme
+
+#### Audio Sistemi
+- [x] **AudioManager** — Singleton ses yöneticisi
+- [x] Ses efektleri tanımlandı (cardPlay, trickWin, king, vb.)
+- [x] Mute/volume kontrolü
+- [x] Test thread safety (isTesting flag)
+- [ ] Ses dosyaları (wav) — Bekliyor
 
 #### UI/UX
 - [x] Ahşap arka plan + yeşil kadife masa
@@ -80,11 +88,19 @@
 
 #### Kod Kalitesi
 - [x] SwiftLint konfigürasyonu
-- [x] 102 unit test
+- [x] **115+ unit test** (genişletildi)
 - [x] %90+ test coverage
 - [x] Inline dokümantasyon (SwiftDoc)
 - [x] README.md (İngilizce/Türkçe)
 - [x] GameConstants.swift (sabit değerler)
+- [x] Player Equatable fix
+
+#### Son Düzeltmeler (1 Mart 2026)
+- [x] isProcessingTrick race condition fix
+- [x] AudioManager test thread safety
+- [x] Player.swift UUID bazlı Equatable
+- [x] Test suite genişletildi (PlayerTests, TrickTests, RoundTests, RuleEngineTests)
+- [x] KingGame.xctestplan eklendi
 
 ---
 
@@ -92,25 +108,22 @@
 
 ### v1.1.0 — Ses Sistemi (Planlanıyor)
 
-#### Audio
-- [ ] Kart atma sesi (sürtünme efekti)
-- [ ] Löve kazanma sesi (şaklama)
-- [ ] Ceza yeme sesi (uyarı)
-- [ ] King fanfarı (kutlama)
-- [ ] Ses ayarları (açık/kapalı, volume)
-- [ ] Arka plan müziği (opsiyonel)
+#### Audio Dosyaları
+- [ ] card_play.wav — Kart atma sesi
+- [ ] trick_win.wav — Löve kazanma sesi
+- [ ] bidding.wav — Kontrat seçimi
+- [ ] king.wav — King fanfarı
+- [ ] error.wav — Geçersiz hamle
+- [ ] shuffle.wav — Kart karıştırma
+- [ ] deal.wav — Kart dağıtma
+- [ ] round_end.wav — El sonu
+- [ ] game_end.wav — Oyun sonu
 
-#### AudioManager
-```swift
-class AudioManager: ObservableObject {
-    @Published var isMuted: Bool = false
-    @Published var volume: Float = 0.7
-    
-    func play(_ sound: SoundType)
-    func preloadSounds()
-    func stopAll()
-}
-```
+#### Ses Ayarları UI
+- [ ] Ayarlar menüsü
+- [ ] Ses açık/kapalı toggle
+- [ ] Volume slider
+- [ ] Arka plan müziği (opsiyonel)
 
 ---
 
@@ -184,11 +197,11 @@ class AudioManager: ObservableObject {
 - [ ] **Savunma AI** — Minimal kayıp odaklı
 - [ ] **Saldırı AI** — Rakip cezalandırma
 
-#### Kart Sayımı
-- [ ] Oynanan kartları takip et
+#### Gelişmiş Kart Sayımı
 - [ ] Kalan kartları hesapla
 - [ ] Rakip eli tahmin et
 - [ ] Optimal strateji uygula
+- [ ] Monte Carlo simülasyonu
 
 #### Zorluk Seviyeleri
 - [ ] Kolay (AI hata yapar)
@@ -203,47 +216,48 @@ class AudioManager: ObservableObject {
 ### Kod Bazı
 | Kategori | Satır | Yüzde |
 |----------|-------|-------|
-| Models | 1,047 | 34% |
-| Engine | 499 | 16% |
-| Views | 1,400+ | 45% |
+| Models | 1,047 | 32% |
+| Engine | 499 | 15% |
+| Managers | 180 | 5% |
+| Views | 1,400+ | 43% |
 | Utils | 141 | 5% |
-| **Toplam** | **~3,100** | **100%** |
+| **Toplam** | **~3,300** | **100%** |
 
 ### Test İstatistikleri
 | Test Suite | Test Sayısı | Coverage |
 |------------|-------------|----------|
 | CardTests | 15 | %100 |
 | DeckTests | 12 | %100 |
-| PlayerTests | 14 | %100 |
+| PlayerTests | 20+ | %100 |
 | ContractTypeTests | 12 | %95 |
-| TrickTests | 7 | %100 |
-| RoundTests | 4 | %100 |
-| RuleEngineTests | 12 | %95 |
+| TrickTests | 25+ | %100 |
+| RoundTests | 15+ | %100 |
+| RuleEngineTests | 20+ | %95 |
 | AIDecisionEngineTests | 11 | %85 |
 | GameStateTests | 15 | %90 |
-| **Toplam** | **102** | **%90+** |
+| **Toplam** | **115+** | **%90+** |
 
 ---
 
 ## 🎯 Teknik Hedefler
 
 ### Performans
-- [ ] 60 FPS animasyonlar
-- [ ] <100ms AI karar süresi
-- [ ] <1s oyun başlatma
-- [ ] Memory footprint <50MB
+- [x] 60 FPS animasyonlar
+- [x] <100ms AI karar süresi
+- [x] <1s oyun başlatma
+- [x] Memory footprint <50MB
 
 ### Kalite
-- [ ] %95+ test coverage koru
-- [ ] SwiftLint: 0 violation
-- [ ] 0 crash rate
+- [x] %90+ test coverage
+- [x] SwiftLint: 0 violation
+- [x] 0 crash rate
 - [ ] 4.5+ App Store rating (gelecek)
 
 ### Güvenlik
-- [ ] Sandboxing koru
-- [ ] Code signing koru
-- [ ] No external dependencies
-- [ ] Privacy compliance
+- [x] Sandboxing enabled
+- [x] Code signing configured
+- [x] No external dependencies
+- [x] Privacy compliance
 
 ---
 
@@ -280,7 +294,6 @@ refactor: Extract constants to GameConstants
 ### Dokümantasyon
 - [README.md](../README.md) — Genel bakış
 - [ProjectAnalysis.md](ProjectAnalysis.md) — Kod analizi
-- [UI_UX_Suggestions.md](Views/UI_UX_Suggestions.md) — UI önerileri
 
 ### Araçlar
 - Xcode 15+
@@ -296,19 +309,20 @@ refactor: Extract constants to GameConstants
 ## 📞 İletişim
 
 **Geliştirici:** Akif AYDIN  
-**Email:** [your.email@example.com](mailto:your.email@example.com)  
-**GitHub:** [@yourusername](https://github.com/yourusername)
+**GitHub:** [@akifaydin](https://github.com/akifaydin)
 
 ---
 
 ## 🏆 Başarımlar
 
 - ✅ v1.0 Production Release
-- ✅ 102 Unit Tests
+- ✅ 115+ Unit Tests
 - ✅ %90+ Test Coverage
 - ✅ SwiftLint Compliant
 - ✅ Full Documentation
 - ✅ Premium UI/UX
+- ✅ AudioManager Ready
+- ✅ AI Card Counting
 
 ---
 

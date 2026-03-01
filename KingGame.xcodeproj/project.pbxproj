@@ -18,6 +18,7 @@
 
 /* Begin PBXFileReference section */
 		5E0CF97F2F54B87300C9A24F /* KingGameTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KingGameTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5E4E5B952F54DB8200DF5DA6 /* KingGame.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = KingGame.xctestplan; sourceTree = "<group>"; };
 		5E9E1E082F5337790001F963 /* KingGame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KingGame.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -68,6 +69,7 @@
 		5E9E1DFF2F5337790001F963 = {
 			isa = PBXGroup;
 			children = (
+				5E4E5B952F54DB8200DF5DA6 /* KingGame.xctestplan */,
 				5E9E1E0A2F5337790001F963 /* KingGame */,
 				5E0CF9802F54B87300C9A24F /* KingGameTests */,
 				5E9E1E092F5337790001F963 /* Products */,
