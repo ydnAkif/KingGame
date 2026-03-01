@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 
 enum GamePhase {
     case setup, bidding, playing, gameEnd
@@ -18,10 +18,10 @@ class GameState: ObservableObject {
 
     // players[0]=Güney(insan) [1]=Kuzey [2]=Batı [3]=Doğu
     let players: [Player] = [
-        Player(name: "Akif",       type: .human),
+        Player(name: "Akif", type: .human),
         Player(name: "AI-Agresif", type: .aiAggressive),
         Player(name: "AI-Dengeli", type: .aiBalanced),
-        Player(name: "AI-Hesapçı", type: .aiCalculator)
+        Player(name: "AI-Hesapçı", type: .aiCalculator),
     ]
 
     @Published var phase: GamePhase = .setup
@@ -77,9 +77,10 @@ class GameState: ObservableObject {
         let idx = biddingPlayerIndex
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             guard let self = self,
-                  self.phase == .bidding,
-                  self.biddingPlayerIndex == idx,
-                  self.biddingPlayer.isAI else { return }
+                self.phase == .bidding,
+                self.biddingPlayerIndex == idx,
+                self.biddingPlayer.isAI
+            else { return }
 
             let available = ContractType.allCases.filter {
                 RuleEngine.canSelect(
@@ -156,9 +157,9 @@ class GameState: ObservableObject {
         if card.isRifki && round.contract == .rifki {
             isProcessingTrick = true
             currentRound = round
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                self.finalizeTrick(&round, forced: true)
-                self.isProcessingTrick = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                self?.finalizeTrick(forced: true)
+                self?.isProcessingTrick = false
             }
             return
         }
@@ -167,9 +168,9 @@ class GameState: ObservableObject {
         if count >= 4 {
             isProcessingTrick = true
             currentRound = round
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                self.finalizeTrick(&round, forced: false)
-                self.isProcessingTrick = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                self?.finalizeTrick(forced: false)
+                self?.isProcessingTrick = false
             }
             return
         }
@@ -181,7 +182,8 @@ class GameState: ObservableObject {
     }
 
     // MARK: - Löveyi Kapat
-    private func finalizeTrick(_ round: inout Round, forced: Bool) {
+    private func finalizeTrick(forced: Bool) {
+        guard var round = currentRound else { return }
         guard let trick = round.currentTrick else { return }
 
         if let winner = trick.winner(contract: round.contract) {
@@ -222,8 +224,8 @@ class GameState: ObservableObject {
         if shouldEndEarly(round: round) || round.tricks.count >= 13 || forced {
             endRound(&round)
         } else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                self.scheduleAIPlayIfNeeded()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.scheduleAIPlayIfNeeded()
             }
         }
     }
@@ -289,9 +291,10 @@ class GameState: ObservableObject {
         let idx = currentPlayerIndex
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             guard let self = self,
-                  self.phase == .playing,
-                  self.currentPlayerIndex == idx,
-                  self.players[idx].isAI else { return }
+                self.phase == .playing,
+                self.currentPlayerIndex == idx,
+                self.players[idx].isAI
+            else { return }
             self.performAIPlay(self.players[idx])
         }
     }
@@ -321,13 +324,14 @@ class GameState: ObservableObject {
         round.isComplete = true
         players.forEach { $0.totalScore += $0.roundScore }
 
-        scoreHistory.append(ScoreEntry(
-            roundNumber: round.roundNumber,
-            contract: round.contract,
-            contractOwner: round.contractOwner.name,
-            scores: Dictionary(uniqueKeysWithValues: players.map { ($0.name, $0.roundScore) }),
-            totals: Dictionary(uniqueKeysWithValues: players.map { ($0.name, $0.totalScore) })
-        ))
+        scoreHistory.append(
+            ScoreEntry(
+                roundNumber: round.roundNumber,
+                contract: round.contract,
+                contractOwner: round.contractOwner.name,
+                scores: Dictionary(uniqueKeysWithValues: players.map { ($0.name, $0.roundScore) }),
+                totals: Dictionary(uniqueKeysWithValues: players.map { ($0.name, $0.totalScore) })
+            ))
         completedRounds.append(round)
         currentRound = round
 
@@ -352,15 +356,17 @@ class GameState: ObservableObject {
         winner.totalScore += 12
         players.filter { $0.id != winner.id }.forEach { $0.totalScore -= 4 }
 
-        scoreHistory.append(ScoreEntry(
-            roundNumber: roundNumber,
-            contract: currentRound?.contract ?? .trumpSpades,
-            contractOwner: currentRound?.contractOwner.name ?? winner.name,
-            scores: Dictionary(uniqueKeysWithValues: players.map {
-                ($0.name, $0.id == winner.id ? 12 : -4)
-            }),
-            totals: Dictionary(uniqueKeysWithValues: players.map { ($0.name, $0.totalScore) })
-        ))
+        scoreHistory.append(
+            ScoreEntry(
+                roundNumber: roundNumber,
+                contract: currentRound?.contract ?? .trumpSpades,
+                contractOwner: currentRound?.contractOwner.name ?? winner.name,
+                scores: Dictionary(
+                    uniqueKeysWithValues: players.map {
+                        ($0.name, $0.id == winner.id ? 12 : -4)
+                    }),
+                totals: Dictionary(uniqueKeysWithValues: players.map { ($0.name, $0.totalScore) })
+            ))
 
         phase = .gameEnd
         determineWinners()
