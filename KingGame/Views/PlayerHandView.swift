@@ -18,27 +18,32 @@ struct PlayerHandView: View {
     }
 
     var body: some View {
-        HStack(spacing: -55) {  // Kartların sayılarının görünmesi için ideal negatif boşluk
-            let totalCards = sortedHand.count
-            let centerIndex = Double(totalCards - 1) / 2.0
+        let currentHand = sortedHand
+        let totalCards = currentHand.count
+        let centerIndex = Double(totalCards - 1) / 2.0
+        let hovIndex = currentHand.firstIndex(where: { $0.id == hoveredCard?.id }) ?? -999
 
-            ForEach(Array(sortedHand.enumerated()), id: \.element.id) { index, card in
+        return HStack(spacing: -55) {  // Kartların sayılarının görünmesi için ideal negatif boşluk
+            ForEach(Array(currentHand.enumerated()), id: \.element.id) { index, card in
                 let isPlayable = validCards.contains(card)
                 let isSelected = selectedCard?.id == card.id
                 let isHovered = hoveredCard?.id == card.id
 
                 // Yelpaze efekti için kavis ve rotasyon hesabı
                 let indexOffset = Double(index) - centerIndex
-                let cardAngle = indexOffset * 3.5  // Daha dengeli bir dönüş açısı
+                let cardAngle = indexOffset * GameConstants.cardFanAngle  // Daha dengeli bir dönüş açısı
                 let yOffset = abs(indexOffset) * abs(indexOffset) * 1.5  // Kenarlara doğru parabolik bir düşüş
 
                 // Dock efekti için yanındakileri de hafif büyüt
-                let distance = abs(
-                    Double(index)
-                        - (Double(
-                            sortedHand.firstIndex(where: { $0.id == hoveredCard?.id }) ?? -999)))
-                let scale: CGFloat = isHovered ? 1.15 : (distance == 1 ? 1.05 : 1.0)
-                let hoverYOffset: CGFloat = isHovered ? -25 : (distance == 1 ? -10 : 0)
+                let distance = abs(Double(index) - Double(hovIndex))
+                let scale: CGFloat =
+                    isHovered
+                    ? GameConstants.cardHoverScale
+                    : (distance == 1.0 ? GameConstants.cardNeighborScale : 1.0)
+                let hoverYOffset: CGFloat = isHovered ? -25.0 : (distance == 1.0 ? -10.0 : 0.0)
+                let zIndexValue: Double = (isSelected || isHovered) ? 100.0 : Double(index)
+                let yFinalOffset: CGFloat =
+                    isSelected ? GameConstants.cardSelectOffset : hoverYOffset
 
                 ZStack {
                     // Sabit etkileşim katmanı (görünmez) - Fare titremesini önler
@@ -65,23 +70,26 @@ struct PlayerHandView: View {
                         card: card,
                         isPlayable: isPlayable,
                         isSelected: isSelected,
-                        width: 100
+                        width: GameConstants.cardWidth
                     )
                     .allowsHitTesting(false)  // Tıklamaları sabit Rectangle'a bırak
                     .overlay(
-                        isPlayable && !isSelected
-                            ? RoundedRectangle(cornerRadius: 8)
-                                .stroke(
-                                    Color.white.opacity(isHovered ? 0.8 : 0.3),
-                                    lineWidth: isHovered ? 2.5 : 1.5)
-                            : nil
+                        Group {
+                            if isPlayable && !isSelected {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(
+                                        Color.white.opacity(isHovered ? 0.8 : 0.3),
+                                        lineWidth: isHovered ? 2.5 : 1.5
+                                    )
+                            }
+                        }
                     )
                     .scaleEffect(scale)
-                    .offset(y: isSelected ? -40 : hoverYOffset)
+                    .offset(y: yFinalOffset)
                 }
                 .rotationEffect(Angle(degrees: cardAngle), anchor: .bottom)
                 .offset(y: yOffset)
-                .zIndex(isSelected || isHovered ? 100 : Double(index))
+                .zIndex(zIndexValue)
                 .transition(
                     .asymmetric(
                         insertion: .move(edge: .bottom).combined(with: .opacity),
@@ -106,7 +114,7 @@ struct PlayerHandView: View {
                 .stroke(Color.goldMid.opacity(0.15), lineWidth: 1)
                 .ignoresSafeArea(edges: .bottom)
         )
-        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: sortedHand.count)
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: currentHand.count)
     }
     private func handleTap(_ card: Card, isPlayable: Bool) {
         guard isPlayable else { return }

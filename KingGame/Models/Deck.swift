@@ -2,12 +2,12 @@ import Foundation
 
 struct Deck {
     private(set) var cards: [Card] = []
-    
+
     init() {
         reset()
     }
-    
-    // 52 kartı oluştur
+
+    // Create 52 cards
     mutating func reset() {
         cards = []
         for suit in Suit.allCases {
@@ -16,13 +16,13 @@ struct Deck {
             }
         }
     }
-    
-    // Kartları karıştır (Fisher-Yates)
+
+    // Shuffle the cards (Fisher-Yates)
     mutating func shuffle() {
         cards.shuffle()
     }
-    
-    // 4 oyuncuya tek tek dağıt (13'er kart)
+
+    // Deal the cards to 4 players (13 each)
     mutating func deal() -> [[Card]] {
         shuffle()
         var hands: [[Card]] = [[], [], [], []]
@@ -31,14 +31,14 @@ struct Deck {
         }
         return hands
     }
-    
-    // Karo 2'yi hangi oyuncu aldı?
-    static func findDiamondTwo(in hands: [[Card]]) -> Int {
+
+    // Which player has the 2 of diamonds? Returns nil if not found
+    static func findDiamondTwo(in hands: [[Card]]) -> Int? {
         for (playerIndex, hand) in hands.enumerated() {
             if hand.contains(where: { $0.suit == .diamonds && $0.rank == .two }) {
                 return playerIndex
             }
         }
-        return 0 // default
+        return nil
     }
 }

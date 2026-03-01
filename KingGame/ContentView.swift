@@ -94,7 +94,7 @@ struct ContentView: View {
                 }
             }
         }
-        .frame(minWidth: 1050, minHeight: 780)
+        .frame(minWidth: GameConstants.minScreenWidth, minHeight: GameConstants.minScreenHeight)
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: gameState.phase)
     }
 }

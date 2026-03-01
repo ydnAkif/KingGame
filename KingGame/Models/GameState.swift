@@ -1,10 +1,27 @@
 import Combine
 import Foundation
 
+// MARK: - Game Phase
+
+/// Represents the current phase of the game.
+///
+/// The game progresses through these phases in order:
+/// 1. `setup` - Initial state before game starts
+/// 2. `bidding` - Players select contracts
+/// 3. `playing` - Cards are being played
+/// 4. `roundEnd` - Round completed, showing scores
+/// 5. `gameEnd` - All 20 rounds completed
 enum GamePhase {
-    case setup, bidding, playing, roundEnd, gameEnd
+    case setup
+    case bidding
+    case playing
+    case roundEnd
+    case gameEnd
 }
 
+/// Represents a single score entry for a completed round.
+///
+/// Used to track the scoring history throughout the game.
 struct ScoreEntry: Identifiable {
     let id = UUID()
     let roundNumber: Int
@@ -14,9 +31,30 @@ struct ScoreEntry: Identifiable {
     let totals: [String: Int]
 }
 
+/// Main game controller managing the entire game lifecycle.
+///
+/// `GameState` is the central observable object that coordinates:
+/// - Player management (4 players: 1 human + 3 AI)
+/// - Card dealing and trick tracking
+/// - Bidding and contract selection
+/// - Score calculation and round management
+/// - Game phase transitions
+///
+/// ## Game Flow
+/// 1. `startGame()` - Initialize 20-round game
+/// 2. Bidding phase - Diamond 2 owner bids first
+/// 3. Playing phase - 13 tricks per round
+/// 4. Round end - Score summary
+/// 5. Repeat until 20 rounds complete
+///
+/// ## Player Order
+/// Players are indexed as: [0]South(human) [1]North [2]West [3]East
+/// Turn order is counter-clockwise: South → East → North → West
+///
+/// - Note: This class uses `@Published` properties for SwiftUI reactivity.
 class GameState: ObservableObject {
 
-    // players[0]=Güney(insan) [1]=Kuzey [2]=Batı [3]=Doğu
+    // Player order: South (human), North, West, East
     let players: [Player] = [
         Player(name: "Akif", type: .human),
         Player(name: "AI-Agresif", type: .aiAggressive),
@@ -39,21 +77,23 @@ class GameState: ObservableObject {
     @Published var lastTrickWinner: Player? = nil
 
     var playedCards: [Card] = []
-    private var isProcessingTrick: Bool = false
+    @Published private var isProcessingTrick: Bool = false
 
     var currentPlayer: Player { players[currentPlayerIndex] }
     var biddingPlayer: Player { players[biddingPlayerIndex] }
 
-    // Saat yönü tersine: 0→3→1→2→0
+    // Counter-clockwise index progression: 0→3→1→2→0
     private let ccwNext = [3, 2, 0, 1]
     private func nextCCW(_ i: Int) -> Int { ccwNext[i] }
 
-    // MARK: - Oyun Başlat
+    // MARK: - Game Start
     func startGame() {
         completedRounds = []
         scoreHistory = []
         biddingTracker = BiddingTracker()
         roundNumber = 0
+        currentPlayerIndex = 0
+        biddingPlayerIndex = 0
         playedCards = []
         players.forEach { $0.resetForNewGame() }
         dealCards(isFirstDeal: true)
@@ -62,15 +102,19 @@ class GameState: ObservableObject {
         scheduleAIBiddingIfNeeded()
     }
 
-    // MARK: - Kart Dağıt
+    // MARK: - Card Dealing
     func dealCards(isFirstDeal: Bool = false) {
         var deck = Deck()
         let hands = deck.deal()
         for (i, p) in players.enumerated() { p.hand = hands[i] }
         if isFirstDeal {
-            let starter = Deck.findDiamondTwo(in: hands)
-            biddingPlayerIndex = starter
-            currentPlayerIndex = starter
+            if let starter = Deck.findDiamondTwo(in: hands) {
+                biddingPlayerIndex = starter
+                currentPlayerIndex = starter
+            } else {
+                biddingPlayerIndex = 0
+                currentPlayerIndex = 0
+            }
         }
     }
 
@@ -78,7 +122,8 @@ class GameState: ObservableObject {
     func scheduleAIBiddingIfNeeded() {
         guard phase == .bidding, biddingPlayer.isAI else { return }
         let idx = biddingPlayerIndex
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + GameConstants.aiBiddingDelay) {
+            [weak self] in
             guard let self = self,
                 self.phase == .bidding,
                 self.biddingPlayerIndex == idx,
@@ -99,13 +144,14 @@ class GameState: ObservableObject {
                 for: self.biddingPlayer,
                 availableContracts: available,
                 hand: self.biddingPlayer.hand,
-                tracker: self.biddingTracker
+                tracker: self.biddingTracker,
+                roundNumber: self.roundNumber + 1
             )
             self.selectContract(chosen)
         }
     }
 
-    // MARK: - Kontrat Seç
+    // MARK: - Contract Selection
     func selectContract(_ contract: ContractType) {
         let p = players[biddingPlayerIndex]
         biddingTracker.select(contract, for: p)
@@ -118,6 +164,9 @@ class GameState: ObservableObject {
         )
         players.forEach { $0.wonCards = [] }
 
+        // Reset played cards when a contract is selected for the new round
+        playedCards = []
+
         currentPlayerIndex = biddingPlayerIndex
         phase = .playing
         message = "\(p.name) '\(contract.rawValue)' seçti!"
@@ -128,14 +177,18 @@ class GameState: ObservableObject {
         biddingPlayerIndex = nextCCW(biddingPlayerIndex)
     }
 
-    // MARK: - Kart Oyna
+    // MARK: - Playing a Card
     func playCard(_ card: Card, by player: Player) {
         guard phase == .playing else { return }
-        guard !isProcessingTrick else { return }
+        guard !isProcessingTrick else {
+            print("⚠️ Trick processing in progress, ignoring card play")
+            return
+        }
         guard player.id == currentPlayer.id else { return }
         guard var round = currentRound else { return }
         guard player.playCard(card) != nil else { return }
 
+        isProcessingTrick = true
         playedCards.append(card)
 
         if round.currentTrick == nil {
@@ -148,27 +201,23 @@ class GameState: ObservableObject {
 
         if card.suit == .hearts { round.heartsOpened = true }
 
-        // Koz açıldı mı? (kozla löve kazandı)
-        if let trumpSuit = round.contract.trumpSuit, card.suit == trumpSuit {
-            round.trumpOpened = true
-        }
-
         let count = round.currentTrick?.cards.count ?? 0
         print("🃏 \(player.name) → \(card.displayName) [\(count)/4]")
 
-        // 4. kart
+        // Fourth card in the trick
         if count >= 4 {
             isProcessingTrick = true
             currentRound = round
 
-            // Eğer rıfkı atıldıysa veya oyun bitecekse daha uzun süre bekleyelim
+            // Delay longer if Rifki is played or the round could end soon
             let willEndEarly = shouldEndEarly(round: round)
             let isRifkiContract = round.contract == .rifki
-            let delay = (willEndEarly || isRifkiContract) ? 2.5 : 1.8
+            let delay =
+                (willEndEarly || isRifkiContract)
+                ? GameConstants.trickGatherDelayExtended : GameConstants.trickGatherDelay
 
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
                 self?.finalizeTrick(forced: false)
-                self?.isProcessingTrick = false
             }
             return
         }
@@ -179,37 +228,39 @@ class GameState: ObservableObject {
         scheduleAIPlayIfNeeded()
     }
 
-    // MARK: - Löveyi Kapat
+    // MARK: - Finalizing Trick
     private func finalizeTrick(forced: Bool) {
+        defer { isProcessingTrick = false }  // Her durumda flag'i sıfırla
+
         guard var round = currentRound else { return }
         guard let trick = round.currentTrick else { return }
 
-        // Animasyon için son eli kaydet
+        // Store the last trick for animations
         self.lastTrick = trick
 
         if let winner = trick.winner(contract: round.contract) {
             winner.winTrick()
             self.lastTrickWinner = winner
 
-            // Kazanan kart toplar (görüntüleme için)
+            // Winner collects cards for display
             winner.wonCards.append(contentsOf: trick.allCards)
 
             calculateScore(trick: trick, winner: winner, contract: round.contract)
 
-            // Koz ile kazandıysa trumpOpened = true
+            // If a trump card appeared, flag that trump has opened
             if let trumpSuit = round.contract.trumpSuit {
                 if trick.cards.contains(where: { $0.card.suit == trumpSuit }) {
                     round.trumpOpened = true
                 }
             }
 
-            // King kontrolü
+            // Check for King condition
             if round.contract.isTrump && winner.tricksWon == 11 {
                 round.tricks.append(trick)
                 round.currentTrick = nil
                 currentRound = round
                 handleKing(winner: winner)
-                // Animasyonu temizle
+                // Clear animation state
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
                     self?.lastTrick = nil
                     self?.lastTrickWinner = nil
@@ -227,24 +278,25 @@ class GameState: ObservableObject {
         round.currentTrick = nil
         currentRound = round
 
-        // Animasyon bittikten sonra temizle
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+        // Clean up animation state after delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + GameConstants.cardPlayAnimationDuration) {
+            [weak self] in
             self?.lastTrick = nil
             self?.lastTrickWinner = nil
         }
 
-        // Erken bitiş kontrolü
+        // Check for early round termination
         if shouldEndEarly(round: round) || round.tricks.count >= 13 || forced {
             endRound(&round)
         } else {
-            // Animasyon süresince (0.6) bekle, sonra AI oynasın
+            // Wait for animation before letting AI continue
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { [weak self] in
                 self?.scheduleAIPlayIfNeeded()
             }
         }
     }
 
-    // MARK: - Erken Bitiş Kontrolü
+    // MARK: - Early Round End Check
     private func shouldEndEarly(round: Round) -> Bool {
         let allWonCards = players.flatMap { $0.wonCards }
         let currentTrickCards = round.currentTrick?.cards.map { $0.card } ?? []
@@ -252,26 +304,26 @@ class GameState: ObservableObject {
 
         switch round.contract {
         case .noTricks, .lastTwo:
-            // 13 löve oynanmak zorunda
+            // Always play all 13 tricks for these contracts
             return false
 
         case .noHearts:
-            // Tüm 13 kupa alındıysa biter, aksi halde 13 löve oynanır
+            // End once all 13 hearts have been captured
             let heartsTaken = allCardsToEvaluate.filter { $0.isHeart }.count
             return heartsTaken >= 13
 
         case .noQueens:
-            // Tüm 4 kız alındıysa biter
+            // End once all 4 queens have been captured
             let queensTaken = allCardsToEvaluate.filter { $0.isQueen }.count
             return queensTaken >= 4
 
         case .noMales:
-            // Tüm 8 erkek (4K + 4J) alındıysa biter
+            // End once all 8 male cards (kings and jacks) have been captured
             let malesTaken = allCardsToEvaluate.filter { $0.isMale }.count
             return malesTaken >= 8
 
         case .rifki:
-            // Rıfkı alındıysa biter
+            // End once the Rifki (King of Hearts) has been captured
             let rifkiTaken = allCardsToEvaluate.contains { $0.isRifki }
             return rifkiTaken
 
@@ -280,7 +332,7 @@ class GameState: ObservableObject {
         }
     }
 
-    // MARK: - Puan Hesapla
+    // MARK: - Score Calculation
     private func calculateScore(trick: Trick, winner: Player, contract: ContractType) {
         switch contract {
         case .trumpSpades, .trumpHearts, .trumpDiamonds, .trumpClubs:
@@ -302,12 +354,12 @@ class GameState: ObservableObject {
         }
     }
 
-    // MARK: - AI Oynama
+    // MARK: - AI Play Scheduling
     private func scheduleAIPlayIfNeeded() {
         guard phase == .playing else { return }
         guard players[currentPlayerIndex].isAI else { return }
         let idx = currentPlayerIndex
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + GameConstants.aiPlayDelay) { [weak self] in
             guard let self = self,
                 self.phase == .playing,
                 self.currentPlayerIndex == idx,
@@ -337,7 +389,7 @@ class GameState: ObservableObject {
         playCard(card, by: player)
     }
 
-    // MARK: - Kontrat Bitir
+    // MARK: - Round End Management
     private func endRound(_ round: inout Round) {
         round.isComplete = true
         players.forEach { $0.totalScore += $0.roundScore }
@@ -364,6 +416,10 @@ class GameState: ObservableObject {
         players.forEach { $0.resetForNewRound() }
         nextBiddingPlayer()
         dealCards()
+
+        // Clear played cards when starting the next round
+        playedCards = []
+
         currentPlayerIndex = biddingPlayerIndex
         phase = .bidding
         message = "\(biddingPlayer.name) kontrat seçiyor..."
@@ -373,7 +429,7 @@ class GameState: ObservableObject {
     // MARK: - King
     private func handleKing(winner: Player) {
         message = "👑 KİNG! \(winner.name) 11 löve aldı!"
-        // King'de normal koz puanları iptal, sadece +12 / -4 uygulanır
+        // King overrides regular trump scoring with fixed bonuses/penalties
         players.forEach { $0.roundScore = 0 }
         winner.totalScore += 12
         players.filter { $0.id != winner.id }.forEach { $0.totalScore -= 4 }
@@ -410,4 +466,17 @@ class GameState: ObservableObject {
         gameWinners.max(by: { $0.totalScore < $1.totalScore })?.totalScore += 3
         message = "Oyun bitti! Kazananlar: \(gameWinners.map { $0.name }.joined(separator: ", "))"
     }
+
+    // MARK: - Test Helpers (DEBUG only)
+    #if DEBUG
+        /// Exposed for unit testing - checks if round should end early
+        func shouldEndEarlyForTest(round: Round) -> Bool {
+            return shouldEndEarly(round: round)
+        }
+
+        /// Exposed for unit testing - determines winners
+        func determineWinnersForTest() {
+            determineWinners()
+        }
+    #endif
 }

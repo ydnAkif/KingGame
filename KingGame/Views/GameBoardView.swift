@@ -1,15 +1,15 @@
 import SwiftUI
 
-// MARK: - Renk Paleti
+// MARK: - Renk Paleti (GameConstants ile uyumlu)
 extension Color {
-    static let woodDark = Color(red: 0.35, green: 0.18, blue: 0.05)
-    static let woodMid = Color(red: 0.55, green: 0.30, blue: 0.10)
-    static let feltGreen = Color(red: 0.10, green: 0.42, blue: 0.15)
-    static let feltDark = Color(red: 0.07, green: 0.30, blue: 0.10)
-    static let goldLight = Color(red: 1.00, green: 0.82, blue: 0.20)
-    static let goldMid = Color(red: 0.90, green: 0.65, blue: 0.10)
-    static let goldDark = Color(red: 0.70, green: 0.45, blue: 0.05)
-    static let plateDark = Color(red: 0.12, green: 0.12, blue: 0.12)
+    static let woodDark = GameConstants.woodDark
+    static let woodMid = GameConstants.woodMid
+    static let feltGreen = GameConstants.feltGreen
+    static let feltDark = GameConstants.feltDark
+    static let goldLight = GameConstants.goldLight
+    static let goldMid = GameConstants.goldMid
+    static let goldDark = GameConstants.goldDark
+    static let plateDark = GameConstants.plateDark
 }
 
 // MARK: - Oyuncu Bilgi Paneli
@@ -162,17 +162,17 @@ struct GameBoardView: View {
     // MARK: - Body
     var body: some View {
         GeometryReader { geo in
-            let tableW = geo.size.width - 240
-            let tableH = geo.size.height - 400
+            let tableW = geo.size.width - GameConstants.tablePaddingHorizontal
+            let tableH = geo.size.height - GameConstants.tablePaddingVertical
             let tableX = geo.size.width / 2
             let tableY = geo.size.height / 2 - 80
 
             ZStack {
                 // Katman 2: Masa Hattı
-                RoundedRectangle(cornerRadius: 32)
+                RoundedRectangle(cornerRadius: GameConstants.tableCornerRadius)
                     .fill(Color.clear)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 32)
+                        RoundedRectangle(cornerRadius: GameConstants.tableCornerRadius)
                             .strokeBorder(Color.white.opacity(0.05), lineWidth: 1)
                     )
                     .frame(width: max(tableW, 500), height: max(tableH, 300))
@@ -241,7 +241,7 @@ struct GameBoardView: View {
                 }
             }
         }
-        .frame(minWidth: 1050, minHeight: 780)
+        .frame(minWidth: GameConstants.minScreenWidth, minHeight: GameConstants.minScreenHeight)
     }
 
     var topInfoBar: some View {

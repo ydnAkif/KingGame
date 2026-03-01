@@ -33,7 +33,8 @@ struct RuleEngine {
         if round.contract.isTrump {
             return validCardsTrump(hand: hand, trick: trick, round: round)
         } else {
-            return validCardsPenalty(hand: hand, trick: trick, round: round, heartsOpened: heartsOpened)
+            return validCardsPenalty(
+                hand: hand, trick: trick, round: round, heartsOpened: heartsOpened)
         }
     }
 
@@ -115,7 +116,9 @@ struct RuleEngine {
         }
     }
 
-    private static func validFollowPenalty(hand: [Card], trick: Trick, leadCard: Card, round: Round) -> [Card] {
+    private static func validFollowPenalty(hand: [Card], trick: Trick, leadCard: Card, round: Round)
+        -> [Card]
+    {
         let leadSuit = leadCard.suit
         let sameSuit = hand.filter { $0.suit == leadSuit }
 
@@ -123,8 +126,7 @@ struct RuleEngine {
             // Kız Almaz: masada As/K varsa aynı renkte Kız oynamak zorunlu
             if round.contract == .noQueens {
                 let hasHighCard = trick.cards.contains {
-                    $0.card.suit == leadSuit &&
-                    ($0.card.rank == .ace || $0.card.rank == .king)
+                    $0.card.suit == leadSuit && ($0.card.rank == .ace || $0.card.rank == .king)
                 }
                 if hasHighCard {
                     let queens = sameSuit.filter { $0.isQueen }
@@ -132,6 +134,21 @@ struct RuleEngine {
                 }
             }
             return sameSuit
+        }
+
+        // Renk yoksa: Kız Almaz'da farklı renk Kız oynanabilir (zorunlu değil)
+        if round.contract == .noQueens {
+            let queens = hand.filter { $0.isQueen }
+            if !queens.isEmpty {
+                // İsteğe bağlı: Kız oynanabilir ama zorunlu değil
+                // Eğer masada As/K varsa ve elde başka Kız varsa, onu oynamak zorunlu
+                let hasHighCardInTrick = trick.cards.contains {
+                    $0.card.rank == .ace || $0.card.rank == .king
+                }
+                if hasHighCardInTrick {
+                    return queens  // Masada yüksek kart varsa sadece Kız oynanabilir
+                }
+            }
         }
 
         return hand
