@@ -1,69 +1,47 @@
-//
-//  TrickPile.swift
-//  KingGame
-//
-//  Created by Akif AYDIN on 28.02.2026.
-//
-
-//
-//  PlayerHandView.swift
-//  KingGame
-//
-//  Created by Akif AYDIN on 28.02.2026.
-//
-
 import SwiftUI
+
+// MARK: - Yön Sistemi
+enum TableDirection: String {
+    case south = "Güney"
+    case north = "Kuzey"
+    case west  = "Batı"
+    case east  = "Doğu"
+}
 
 struct TrickPileView: View {
     let trick: Trick?
-    let playerNames: [UUID: String]
-    
+    let directionOf: (Player) -> TableDirection
+
     var body: some View {
         ZStack {
-            // Masa zemini
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(red: 0.13, green: 0.37, blue: 0.18).opacity(0.8))
-                .frame(width: 320, height: 220)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
-            
+            // Masa ortası — hafif koyu daire
+            Circle()
+                .fill(Color.black.opacity(0.12))
+                .frame(width: 260, height: 260)
+
+            // Kartlar — her biri kendi yönünde
             if let trick = trick {
-                // 4 kart pozisyonu (Kuzey, Doğu, Güney, Batı)
-                ForEach(Array(trick.cards.enumerated()), id: \.offset) { index, play in
-                    CardView(card: play.card, width: 60)
-                        .offset(cardOffset(for: index))
-                        .rotationEffect(.degrees(cardRotation(for: index)))
-                        .transition(.scale.combined(with: .opacity))
+                ForEach(Array(trick.cards.enumerated()), id: \.offset) { _, play in
+                    let dir = directionOf(play.player)
+                    CardView(card: play.card, isPlayable: false, width: 78)
+                        .offset(offsetFor(dir))
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.5).combined(with: .opacity),
+                            removal: .opacity
+                        ))
                 }
-            } else {
-                Text("Kart oynayın")
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.4))
             }
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: trick?.cards.count)
+        .frame(width: 380, height: 320)
+        .animation(.spring(response: 0.28, dampingFraction: 0.72), value: trick?.cards.count ?? 0)
     }
-    
-    // Kart pozisyonları (masanın 4 yönü)
-    private func cardOffset(for index: Int) -> CGSize {
-        switch index {
-        case 0: return CGSize(width: 0, height: -65)    // Kuzey (karşı AI)
-        case 1: return CGSize(width: 85, height: 0)     // Doğu (sağ AI)
-        case 2: return CGSize(width: 0, height: 65)     // Güney (insan)
-        case 3: return CGSize(width: -85, height: 0)    // Batı (sol AI)
-        default: return .zero
-        }
-    }
-    
-    private func cardRotation(for index: Int) -> Double {
-        switch index {
-        case 0: return 180
-        case 1: return 270
-        case 2: return 0
-        case 3: return 90
-        default: return 0
+
+    func offsetFor(_ dir: TableDirection) -> CGSize {
+        switch dir {
+        case .south: return CGSize(width: 0,    height: 108)
+        case .north: return CGSize(width: 0,    height: -108)
+        case .west:  return CGSize(width: -148, height: 0)
+        case .east:  return CGSize(width: 148,  height: 0)
         }
     }
 }

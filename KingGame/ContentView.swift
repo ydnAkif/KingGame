@@ -1,24 +1,23 @@
-//
-//  ContentView.swift
-//  KingGame
-//
-//  Created by Akif AYDIN on 28.02.2026.
-//
-
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject var gameState = GameState()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        ZStack {
+            switch gameState.phase {
+            case .setup:
+                MainMenuView(gameState: gameState)
+            case .bidding:
+                BiddingView(gameState: gameState) { contract in
+                    gameState.selectContract(contract)
+                }
+            case .playing:
+                GameBoardView(gameState: gameState)
+            case .gameEnd:
+                GameEndView(gameState: gameState)
+            }
         }
-        .padding()
+        .frame(minWidth: 1000, minHeight: 750)
     }
-}
-
-#Preview {
-    ContentView()
 }
