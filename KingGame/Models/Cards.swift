@@ -24,7 +24,7 @@ enum Suit: String, CaseIterable, Codable {
         }
     }
     
-    var isRead: Bool {
+    var isRed: Bool {
         return self == .hearts || self == .diamonds
     }
 }
@@ -65,6 +65,24 @@ enum Rank: Int, CaseIterable, Codable, Comparable{
         }
     }
     
+    var shortName: String {
+        switch self {
+        case .two:   return "2"
+        case .three: return "3"
+        case .four:  return "4"
+        case .five:  return "5"
+        case .six:   return "6"
+        case .seven: return "7"
+        case .eight: return "8"
+        case .nine:  return "9"
+        case .ten:   return "10"
+        case .jack:  return "J"
+        case .queen: return "Q"
+        case .king:  return "K"
+        case .ace:   return "A"
+        }
+    }
+
     static func < (lhs: Rank, rhs: Rank) -> Bool {
           return lhs.rawValue < rhs.rawValue
       }
@@ -123,6 +141,11 @@ struct Card: Identifiable, Codable, Equatable, Hashable {
         
         var displayName: String {
             return "\(rank.name.capitalized) \(suit.symbol)"
+        }
+
+        // Kısa gösterim: "K♠", "Q♥" vb.
+        var shortName: String {
+            return "\(rank.shortName)\(suit.symbol)"
         }
 }
 

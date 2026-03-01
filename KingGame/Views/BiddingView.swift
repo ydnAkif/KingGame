@@ -3,6 +3,7 @@ import SwiftUI
 struct BiddingView: View {
     @ObservedObject var gameState: GameState
     let onContractSelected: (ContractType) -> Void
+    private let dummyCard = Card(suit: .spades, rank: .two)
 
     var body: some View {
         ZStack {
@@ -38,7 +39,7 @@ struct BiddingView: View {
             PlayerPlate(player: p, isActive: false, vertical: false)
             HStack(spacing: -20) {
                 ForEach(0..<p.hand.count, id: \.self) { _ in
-                    CardView(card: Card(suit: .spades, rank: .two), faceDown: true, width: 48)
+                    CardView(card: dummyCard, faceDown: true, width: 48)
                 }
             }
             .frame(height: 72)
@@ -52,7 +53,7 @@ struct BiddingView: View {
                 .rotationEffect(.degrees(-90))
             ZStack {
                 ForEach(Array(0..<min(p.hand.count,8)).reversed(), id: \.self) { i in
-                    CardView(card: Card(suit: .spades, rank: .two), faceDown: true, width: 44)
+                    CardView(card: dummyCard, faceDown: true, width: 44)
                         .rotationEffect(.degrees(90))
                         .offset(y: CGFloat(i) * -8)
                 }
@@ -69,7 +70,7 @@ struct BiddingView: View {
                 .rotationEffect(.degrees(90))
             ZStack {
                 ForEach(Array(0..<min(p.hand.count,8)).reversed(), id: \.self) { i in
-                    CardView(card: Card(suit: .spades, rank: .two), faceDown: true, width: 44)
+                    CardView(card: dummyCard, faceDown: true, width: 44)
                         .rotationEffect(.degrees(-90))
                         .offset(y: CGFloat(i) * -8)
                 }
@@ -149,27 +150,33 @@ struct BiddingView: View {
     // MARK: - Alt — İnsan Eli
     var southHand: some View {
         let human = gameState.players[0]
+        let sorted = human.hand.sorted {
+            $0.suit.rawValue == $1.suit.rawValue
+                ? $0.rank < $1.rank
+                : $0.suit.rawValue < $1.suit.rawValue
+        }
+        let half = (sorted.count + 1) / 2
+        let topRow = Array(sorted.prefix(half))
+        let bottomRow = Array(sorted.dropFirst(half))
+
         return VStack(spacing: 6) {
             PlayerPlate(player: human, isActive: true, vertical: false)
-            // Kartları yelpaze gibi göster — büyük boyut
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: -22) {
-                    ForEach(
-                        human.hand.sorted(by: {
-                            $0.suit.rawValue == $1.suit.rawValue
-                                ? $0.rank < $1.rank
-                                : $0.suit.rawValue < $1.suit.rawValue
-                        }),
-                        id: \.id
-                    ) { card in
-                        CardView(card: card, isPlayable: true, width: 82)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 8)
+            VStack(spacing: 4) {
+                biddingCardRow(cards: topRow)
+                biddingCardRow(cards: bottomRow)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
         .padding(.horizontal, 12)
+    }
+
+    func biddingCardRow(cards: [Card]) -> some View {
+        HStack(spacing: -18) {
+            ForEach(cards, id: \.id) { card in
+                CardView(card: card, isPlayable: true, width: 96)
+            }
+        }
     }
 
     // MARK: - Yardımcılar

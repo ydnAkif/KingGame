@@ -19,34 +19,63 @@ struct PlayerPlate: View {
     let vertical: Bool
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             Text(player.name)
                 .font(.system(size: 14, weight: .bold))
                 .foregroundColor(.white)
             Text("\(player.totalScore)")
                 .font(.system(size: 14, weight: .heavy, design: .monospaced))
                 .foregroundColor(player.totalScore >= 0 ? .green : Color(red:1, green:0.3, blue:0.3))
+            // El puanı (oyun sırasında)
+            if player.roundScore != 0 {
+                Text("(\(player.roundScore > 0 ? "+" : "")\(player.roundScore))")
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundColor(player.roundScore > 0 ? .green.opacity(0.7) : Color(red:1, green:0.4, blue:0.4).opacity(0.8))
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 7)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.plateDark)
+                .fill(Color.plateDark.opacity(0.9))
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(isActive ? Color.goldLight : Color.white.opacity(0.1),
-                                lineWidth: isActive ? 2 : 0.5)
+                        .stroke(isActive ? Color.goldLight : Color.white.opacity(0.15),
+                                lineWidth: isActive ? 2.5 : 0.5)
                 )
-                .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                .shadow(color: isActive ? Color.goldLight.opacity(0.3) : .black.opacity(0.5), radius: isActive ? 8 : 4, x: 0, y: 2)
         )
         .scaleEffect(isActive ? 1.04 : 1.0)
         .animation(.easeInOut(duration: 0.3), value: isActive)
     }
 }
 
+// MARK: - Yenilen Kart Badge
+struct EatenCardBadge: View {
+    let text: String
+    let color: Color
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 12, weight: .heavy, design: .monospaced))
+            .foregroundColor(color)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.black.opacity(0.5))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(color.opacity(0.3), lineWidth: 0.5)
+                    )
+            )
+    }
+}
+
 // MARK: - GameBoardView
 struct GameBoardView: View {
     @ObservedObject var gameState: GameState
+    private let dummyCard = Card(suit: .spades, rank: .two)
 
     func direction(for player: Player) -> TableDirection {
         guard let i = gameState.players.firstIndex(where: { $0.id == player.id }) else { return .south }
@@ -76,63 +105,99 @@ struct GameBoardView: View {
             case .noQueens:
                 let cards = player.wonCards.filter { $0.isQueen }
                 if !cards.isEmpty {
-                    HStack(spacing: -8) {
+                    HStack(spacing: 3) {
                         ForEach(cards, id: \.id) { card in
-                            CardView(card: card, isPlayable: false, width: 28)
+                            EatenCardBadge(
+                                text: card.shortName,
+                                color: card.suit.isRed ? Color(red:1, green:0.3, blue:0.3) : .white
+                            )
                         }
                     }
                 }
             case .noMales:
                 let cards = player.wonCards.filter { $0.isMale }
                 if !cards.isEmpty {
-                    HStack(spacing: -8) {
+                    HStack(spacing: 3) {
                         ForEach(cards, id: \.id) { card in
-                            CardView(card: card, isPlayable: false, width: 28)
+                            EatenCardBadge(
+                                text: card.shortName,
+                                color: card.suit.isRed ? Color(red:1, green:0.3, blue:0.3) : .white
+                            )
                         }
                     }
                 }
             case .noHearts, .rifki:
                 let cards = player.wonCards.filter { $0.isHeart }
                 if !cards.isEmpty {
-                    HStack(spacing: -8) {
+                    HStack(spacing: 3) {
                         ForEach(cards, id: \.id) { card in
-                            CardView(card: card, isPlayable: false, width: 28)
+                            EatenCardBadge(
+                                text: card.shortName,
+                                color: Color(red:1, green:0.3, blue:0.3)
+                            )
                         }
                     }
                 }
             case .noTricks:
-                Text("\(player.tricksWon)🃏")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.white.opacity(0.6))
+                if player.tricksWon > 0 {
+                    EatenCardBadge(
+                        text: "\(player.tricksWon) el",
+                        color: .white.opacity(0.8)
+                    )
+                }
+            case .lastTwo:
+                if player.tricksWon > 0 {
+                    EatenCardBadge(
+                        text: "\(player.tricksWon) el",
+                        color: .white.opacity(0.8)
+                    )
+                }
             default:
-                EmptyView()
+                if player.tricksWon > 0 {
+                    EatenCardBadge(
+                        text: "\(player.tricksWon) el",
+                        color: .green.opacity(0.8)
+                    )
+                }
             }
         }
     }
 
     var body: some View {
-        ZStack {
-            woodBackground
-            VStack(spacing: 0) {
-                northZone.padding(.top, 12)
-                HStack(spacing: 0) {
-                    westZone
-                    centerZone.frame(maxWidth: .infinity, maxHeight: .infinity)
-                    eastZone
+        GeometryReader { geo in
+            ZStack {
+                woodBackground(size: geo.size)
+
+                VStack(spacing: 0) {
+                    northZone
+                        .frame(height: 100)
+                        .padding(.top, 12)
+
+                    HStack(spacing: 0) {
+                        westZone
+                            .frame(width: 120)
+                        centerZone
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        eastZone
+                            .frame(width: 120)
+                    }
+                    .frame(maxHeight: .infinity)
+
+                    southZone
+                        .padding(.bottom, 10)
                 }
-                .frame(maxHeight: .infinity)
-                southZone.padding(.bottom, 10)
-            }
-            VStack {
-                topInfoBar
-                Spacer()
+
+                VStack {
+                    topInfoBar
+                    Spacer()
+                }
             }
         }
         .frame(minWidth: 1050, minHeight: 780)
     }
 
     // MARK: - Arka Plan
-    var woodBackground: some View {
+    func woodBackground(size: CGSize) -> some View {
         ZStack {
             Color.woodDark
             RoundedRectangle(cornerRadius: 24)
@@ -140,7 +205,7 @@ struct GameBoardView: View {
                     colors: [Color.feltGreen, Color.feltDark],
                     center: .center, startRadius: 10, endRadius: 500
                 ))
-                .padding(EdgeInsets(top: 100, leading: 110, bottom: 160, trailing: 110))
+                .padding(EdgeInsets(top: 100, leading: 120, bottom: 290, trailing: 120))
         }
         .ignoresSafeArea()
     }
@@ -158,12 +223,18 @@ struct GameBoardView: View {
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(.white.opacity(0.6))
                     if round.heartsOpened {
-                        Text("♥ açık").font(.system(size: 10))
+                        Text("  ACIK")
+                            .font(.system(size: 10, weight: .bold))
                             .foregroundColor(Color(red:1, green:0.4, blue:0.4))
+                    }
+                    if round.contract.isTrump && round.trumpOpened {
+                        Text("KOZ ACIK")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(Color.goldLight)
                     }
                 }
                 .padding(.horizontal, 16).padding(.vertical, 6)
-                .background(Color.black.opacity(0.5)).cornerRadius(20)
+                .background(Color.black.opacity(0.6)).cornerRadius(20)
             }
             Spacer()
             trickCounterBar
@@ -201,18 +272,20 @@ struct GameBoardView: View {
     var northZone: some View {
         let p = player(at: .north)
         let isActive = gameState.currentPlayer.id == p.id
-        return VStack(spacing: 6) {
-            PlayerPlate(player: p, isActive: isActive, vertical: false)
-            eatenCardsView(for: p)
+        return VStack(spacing: 4) {
+            HStack(spacing: 8) {
+                PlayerPlate(player: p, isActive: isActive, vertical: false)
+                eatenCardsView(for: p)
+            }
             ZStack {
                 ForEach(Array(0..<p.hand.count).reversed(), id: \.self) { i in
-                    let angle = Double(i - p.hand.count/2) * 3.5
-                    CardView(card: Card(suit: .spades, rank: .two), faceDown: true, width: 52)
+                    let angle = Double(i - p.hand.count/2) * 3.0
+                    CardView(card: dummyCard, faceDown: true, width: 44)
                         .rotationEffect(.degrees(angle + 180))
-                        .offset(x: CGFloat(i - p.hand.count/2) * 14)
+                        .offset(x: CGFloat(i - p.hand.count/2) * 12)
                 }
             }
-            .frame(height: 80)
+            .frame(height: 65)
         }
     }
 
@@ -220,40 +293,42 @@ struct GameBoardView: View {
     var westZone: some View {
         let p = player(at: .west)
         let isActive = gameState.currentPlayer.id == p.id
-        return VStack(spacing: 6) {
+        return VStack(spacing: 4) {
             PlayerPlate(player: p, isActive: isActive, vertical: false)
                 .rotationEffect(.degrees(-90))
+                .fixedSize()
             eatenCardsView(for: p)
             ZStack {
                 ForEach(Array(0..<p.hand.count).reversed(), id: \.self) { i in
-                    CardView(card: Card(suit: .spades, rank: .two), faceDown: true, width: 48)
+                    CardView(card: dummyCard, faceDown: true, width: 40)
                         .rotationEffect(.degrees(90))
-                        .offset(y: CGFloat(i - p.hand.count/2) * 12)
+                        .offset(y: CGFloat(i - p.hand.count/2) * 10)
                 }
             }
-            .frame(width: 95, height: 210)
+            .frame(width: 80, height: 180)
         }
-        .frame(width: 110)
+        .frame(width: 120)
     }
 
-    // MARK: - DOĞU
+    // MARK: - DOGU
     var eastZone: some View {
         let p = player(at: .east)
         let isActive = gameState.currentPlayer.id == p.id
-        return VStack(spacing: 6) {
+        return VStack(spacing: 4) {
             PlayerPlate(player: p, isActive: isActive, vertical: false)
                 .rotationEffect(.degrees(90))
+                .fixedSize()
             eatenCardsView(for: p)
             ZStack {
                 ForEach(Array(0..<p.hand.count).reversed(), id: \.self) { i in
-                    CardView(card: Card(suit: .spades, rank: .two), faceDown: true, width: 48)
+                    CardView(card: dummyCard, faceDown: true, width: 40)
                         .rotationEffect(.degrees(-90))
-                        .offset(y: CGFloat(i - p.hand.count/2) * 12)
+                        .offset(y: CGFloat(i - p.hand.count/2) * 10)
                 }
             }
-            .frame(width: 95, height: 210)
+            .frame(width: 80, height: 180)
         }
-        .frame(width: 110)
+        .frame(width: 120)
     }
 
     // MARK: - MERKEZ
@@ -268,7 +343,7 @@ struct GameBoardView: View {
         }
     }
 
-    // MARK: - GÜNEY
+    // MARK: - GUNEY
     var southZone: some View {
         let human = player(at: .south)
         let isActive = gameState.currentPlayer.id == human.id && gameState.phase == .playing
@@ -280,24 +355,27 @@ struct GameBoardView: View {
             heartsOpened: gameState.currentRound?.heartsOpened ?? false
         ) : []
 
-        return VStack(spacing: 8) {
-            HStack {
+        return VStack(spacing: 6) {
+            HStack(spacing: 12) {
                 PlayerPlate(player: human, isActive: isActive, vertical: false)
                 eatenCardsView(for: human)
                 if isActive {
-                    Text("🎯 KARTINIZI SEÇİN")
+                    Text("KARTINIZI SECIN")
                         .font(.system(size: 11, weight: .heavy, design: .monospaced))
                         .foregroundColor(.goldLight)
                         .padding(.horizontal, 12).padding(.vertical, 5)
-                        .background(Color.goldDark.opacity(0.3)).cornerRadius(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.goldDark.opacity(0.25))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.goldLight.opacity(0.4), lineWidth: 1)
+                                )
+                        )
                 }
                 Spacer()
-                Text("Bu el: \(human.roundScore >= 0 ? "+" : "")\(human.roundScore)")
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(human.roundScore >= 0 ? .green : Color(red:1,green:0.3,blue:0.3))
-                    .padding(.trailing, 12)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 16)
 
             PlayerHandView(
                 player: human,

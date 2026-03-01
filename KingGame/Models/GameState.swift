@@ -36,6 +36,7 @@ class GameState: ObservableObject {
     @Published var roundNumber: Int = 0
 
     var playedCards: [Card] = []
+    private var isProcessingTrick: Bool = false
 
     var currentPlayer: Player { players[currentPlayerIndex] }
     var biddingPlayer: Player { players[biddingPlayerIndex] }
@@ -52,20 +53,22 @@ class GameState: ObservableObject {
         roundNumber = 0
         playedCards = []
         players.forEach { $0.resetForNewGame() }
-        dealCards()
+        dealCards(isFirstDeal: true)
         phase = .bidding
         message = "\(biddingPlayer.name) kontrat seçiyor..."
         scheduleAIBiddingIfNeeded()
     }
 
     // MARK: - Kart Dağıt
-    func dealCards() {
+    func dealCards(isFirstDeal: Bool = false) {
         var deck = Deck()
         let hands = deck.deal()
         for (i, p) in players.enumerated() { p.hand = hands[i] }
-        let starter = Deck.findDiamondTwo(in: hands)
-        biddingPlayerIndex = starter
-        currentPlayerIndex = starter
+        if isFirstDeal {
+            let starter = Deck.findDiamondTwo(in: hands)
+            biddingPlayerIndex = starter
+            currentPlayerIndex = starter
+        }
     }
 
     // MARK: - AI Bidding
@@ -124,6 +127,7 @@ class GameState: ObservableObject {
     // MARK: - Kart Oyna
     func playCard(_ card: Card, by player: Player) {
         guard phase == .playing else { return }
+        guard !isProcessingTrick else { return }
         guard player.id == currentPlayer.id else { return }
         guard var round = currentRound else { return }
         guard player.playCard(card) != nil else { return }
@@ -150,18 +154,22 @@ class GameState: ObservableObject {
 
         // Rıfkı oynandı
         if card.isRifki && round.contract == .rifki {
+            isProcessingTrick = true
             currentRound = round
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 self.finalizeTrick(&round, forced: true)
+                self.isProcessingTrick = false
             }
             return
         }
 
         // 4. kart
         if count >= 4 {
+            isProcessingTrick = true
             currentRound = round
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 self.finalizeTrick(&round, forced: false)
+                self.isProcessingTrick = false
             }
             return
         }
@@ -339,8 +347,21 @@ class GameState: ObservableObject {
     // MARK: - King
     private func handleKing(winner: Player) {
         message = "👑 KİNG! \(winner.name) 11 löve aldı!"
+        // King'de normal koz puanları iptal, sadece +12 / -4 uygulanır
+        players.forEach { $0.roundScore = 0 }
         winner.totalScore += 12
         players.filter { $0.id != winner.id }.forEach { $0.totalScore -= 4 }
+
+        scoreHistory.append(ScoreEntry(
+            roundNumber: roundNumber,
+            contract: currentRound?.contract ?? .trumpSpades,
+            contractOwner: currentRound?.contractOwner.name ?? winner.name,
+            scores: Dictionary(uniqueKeysWithValues: players.map {
+                ($0.name, $0.id == winner.id ? 12 : -4)
+            }),
+            totals: Dictionary(uniqueKeysWithValues: players.map { ($0.name, $0.totalScore) })
+        ))
+
         phase = .gameEnd
         determineWinners()
     }

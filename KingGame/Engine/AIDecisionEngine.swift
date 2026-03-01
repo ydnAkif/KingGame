@@ -190,14 +190,6 @@ struct AIDecisionEngine {
         return sorted.first ?? validCards[0]
     }
     
-    // MARK: - Adaptif Strateji
-    static func adaptiveStrategy(for player: Player, roundNumber: Int) -> String {
-        guard roundNumber % 5 == 0 else { return "normal" }
-        if player.totalScore < -400 { return "risky" }
-        else if player.totalScore < 0 { return "balanced" }
-        else { return "protective" }
-    }
-    
     // MARK: - Bidding Stratejisi
     static func selectContract(for player: Player, availableContracts: [ContractType], hand: [Card], tracker: BiddingTracker) -> ContractType {
         switch player.type {

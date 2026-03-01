@@ -27,7 +27,8 @@ struct CardView: View {
         .frame(width: width, height: height)
         .scaleEffect(isSelected ? 1.08 : 1.0)
         .offset(y: isSelected ? -12 : 0)
-        .opacity(isPlayable ? 1.0 : 0.5)
+        .opacity(isPlayable ? 1.0 : 0.7)
+        .saturation(isPlayable ? 1.0 : 0.6)
         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)
         .shadow(color: isSelected ? .yellow.opacity(0.8) : .black.opacity(0.3),
                 radius: isSelected ? 12 : 4, x: 0, y: 2)

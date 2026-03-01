@@ -10,9 +10,22 @@
 		5E9E1E082F5337790001F963 /* KingGame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KingGame.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		5E55BB512F54215B00589765 /* Exceptions for "KingGame" folder in "KingGame" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				RoadMap.md,
+			);
+			target = 5E9E1E072F5337790001F963 /* KingGame */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5E9E1E0A2F5337790001F963 /* KingGame */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5E55BB512F54215B00589765 /* Exceptions for "KingGame" folder in "KingGame" target */,
+			);
 			path = KingGame;
 			sourceTree = "<group>";
 		};
