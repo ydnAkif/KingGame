@@ -1,11 +1,3 @@
-//
-//  RoadMap.md
-//  KingGame
-//
-//  Created by Akif AYDIN on 1.03.2026.
-//  Updated: 1 Mart 2026 - Final Update
-//
-
 # 👑 KingGame — Proje Yol Haritası
 
 > **macOS için SwiftUI ile geliştirilmiş King kart oyunu**  
@@ -309,7 +301,7 @@ refactor: Extract constants to GameConstants
 ## 📞 İletişim
 
 **Geliştirici:** Akif AYDIN  
-**GitHub:** [@akifaydin](https://github.com/akifaydin)
+**GitHub:** [@ydnakif](https://github.com/ydnakif)
 
 ---
 
