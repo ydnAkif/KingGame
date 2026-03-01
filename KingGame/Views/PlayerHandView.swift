@@ -6,6 +6,7 @@ struct PlayerHandView: View {
     let onCardSelected: (Card) -> Void
 
     @State private var selectedCard: Card? = nil
+    @State private var hoveredCard: Card? = nil
 
     // Renklere göre gruplanmış ve sıralanmış el
     var sortedHand: [Card] {
@@ -16,60 +17,73 @@ struct PlayerHandView: View {
         }
     }
 
-    // İki sıraya böl: üst sıra ilk yarı, alt sıra ikinci yarı
-    var topRow: [Card] {
-        let half = (sortedHand.count + 1) / 2
-        return Array(sortedHand.prefix(half))
-    }
-
-    var bottomRow: [Card] {
-        let half = (sortedHand.count + 1) / 2
-        return Array(sortedHand.dropFirst(half))
-    }
-
     var body: some View {
-        VStack(spacing: 8) {
-            cardRow(cards: topRow)
-            cardRow(cards: bottomRow)
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 30)  // Extra padding so cards popping up don't clip
-        .padding(.bottom, 12)
-        .background(Color.black.opacity(0.2))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12).stroke(Color.goldMid.opacity(0.1), lineWidth: 1))
-    }
+        HStack(spacing: -55) { // Kartların sayılarının görünmesi için ideal negatif boşluk
+            let totalCards = sortedHand.count
+            let centerIndex = Double(totalCards - 1) / 2.0
 
-    func cardRow(cards: [Card]) -> some View {
-        HStack(spacing: -24) {
-            ForEach(cards) { card in
+            ForEach(Array(sortedHand.enumerated()), id: \.element.id) { index, card in
                 let isPlayable = validCards.contains(card)
                 let isSelected = selectedCard?.id == card.id
+                let isHovered = hoveredCard?.id == card.id
+
+                // Yelpaze efekti için kavis ve rotasyon hesabı
+                let indexOffset = Double(index) - centerIndex
+                let cardAngle = indexOffset * 3.5 // Daha dengeli bir dönüş açısı
+                let yOffset = abs(indexOffset) * abs(indexOffset) * 1.5 // Kenarlara doğru parabolik bir düşüş
 
                 CardView(
                     card: card,
                     isPlayable: isPlayable,
                     isSelected: isSelected,
-                    width: 105  // Increased from 96
+                    width: 100 // Tıklanabilir alan için biraz daha optimal genişlik
                 )
                 .onTapGesture { handleTap(card, isPlayable: isPlayable) }
+                .onHover { hovering in
+                    if isPlayable {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            if hovering {
+                                hoveredCard = card
+                            } else if hoveredCard?.id == card.id {
+                                hoveredCard = nil
+                            }
+                        }
+                    }
+                }
                 .overlay(
                     isPlayable && !isSelected
                         ? RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.white.opacity(0.3), lineWidth: 1.5)
+                            .stroke(Color.white.opacity(isHovered ? 0.8 : 0.3), lineWidth: isHovered ? 2.5 : 1.5)
                         : nil
                 )
-                .zIndex(isSelected ? 10 : Double(cards.firstIndex(of: card) ?? 0))
+                .rotationEffect(Angle(degrees: cardAngle), anchor: .bottom)
+                .offset(y: isSelected ? -30 : (isHovered ? -15 : yOffset))
+                .zIndex(isSelected || isHovered ? 100 : Double(index))
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isSelected)
             }
         }
+        .padding(.top, 40) // Kalkan kartlar için üstten boşluk
+        .padding(.bottom, 25) // Parabolik kavis için alttan boşluk
+        .frame(maxWidth: .infinity) // Arka plan ekranı yatayda tamamen kaplasın
+        .background(
+            // Sadece üst köşeleri yuvarlatılmış geniş arka plan
+            UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24)
+                .fill(Color.black.opacity(0.35))
+                .ignoresSafeArea(edges: .bottom)
+        )
+        .overlay(
+            UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24)
+                .stroke(Color.goldMid.opacity(0.15), lineWidth: 1)
+                .ignoresSafeArea(edges: .bottom)
+        )
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: sortedHand.count)
     }
-
     private func handleTap(_ card: Card, isPlayable: Bool) {
         guard isPlayable else { return }
         if selectedCard?.id == card.id {
             onCardSelected(card)
             selectedCard = nil
+            hoveredCard = nil
         } else {
             selectedCard = card
         }

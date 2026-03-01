@@ -36,6 +36,7 @@ KingGame/
 │   ├── BiddingView.swift    ✅ Kontrat seçim ekranı
 │   ├── GameBoardView.swift  ✅ Ana oyun masası
 │   ├── MainMenuView.swift   ✅ Başlangıç ekranı
+│   ├── RoundEndView.swift   ✅ El sonu skorbordu ve geçiş ekranı
 │   └── GameEndView.swift    ✅ Oyun sonu + skor tablosu
 │
 └── Assets.xcassets/
@@ -143,7 +144,7 @@ KingGame/
 ### Faz 4 — UI Geliştirmeleri
 - [ ] Bidding ekranında "bu kartla riskli" uyarısı
 - [ ] Oyun içi skor geçmişi paneli (yan panel)
-- [ ] Her elin özet ekranı (el bittikten sonra kısa süre göster)
+- [x] Her elin özet ekranı (el bittikten sonra kısa süre göster)
 - [ ] Ayarlar ekranı (AI zorluğu, animasyon hızı, ses)
 - [ ] Renk temaları (klasik yeşil, lacivert, bordo)
 - [ ] iPad / iOS desteği (layout adaptasyonu)

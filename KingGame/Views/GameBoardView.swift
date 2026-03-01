@@ -47,8 +47,7 @@ struct PlayerInfoPanel: View {
                 eatenLine(contract: contract)
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        .frame(width: 110, height: 65)
         .background(
             Color.white.opacity(0.05)
         )
@@ -151,15 +150,6 @@ struct GameBoardView: View {
             let tableY = geo.size.height / 2 - 80
 
             ZStack {
-                // Katman 1: Lüks Kumarhane Arkaplanı (Koyu Yeşil Radiant Gradient + Vignette)
-                Color.black.ignoresSafeArea()
-                RadialGradient(
-                    colors: [Color(red: 0.1, green: 0.35, blue: 0.15), Color.black],
-                    center: .center,
-                    startRadius: 50,
-                    endRadius: geo.size.width * 0.8
-                ).ignoresSafeArea()
-
                 // Katman 2: Masa Hattı (Hafif bir iç stroke veya gölge verebilir)
                 RoundedRectangle(cornerRadius: 32)
                     .fill(Color.clear)
@@ -188,14 +178,14 @@ struct GameBoardView: View {
                     westPanel
                     westCards
                 }
-                .position(x: 80, y: tableY)
+                .position(x: 130, y: tableY)
 
                 // Katman 6: Dogu oyuncu — masanin sag kenarinda
                 HStack(spacing: 6) {
                     eastCards
                     eastPanel
                 }
-                .position(x: geo.size.width - 80, y: tableY)
+                .position(x: geo.size.width - 130, y: tableY)
 
                 // Katman 7: Merkez — oynanan kartlar
                 TrickPileView(
@@ -376,8 +366,10 @@ struct GameBoardView: View {
                 heartsOpened: gameState.currentRound?.heartsOpened ?? false
             ) : []
 
-        return VStack(spacing: 6) {
+        return VStack(spacing: 8) {
+            // İsim paneli ve uyarıyı ortaya al
             HStack(spacing: 12) {
+                Spacer()
                 PlayerInfoPanel(player: human, isActive: isActive, contract: currentContract)
                 if isActive {
                     Text("KARTINIZI SECIN")
@@ -395,13 +387,14 @@ struct GameBoardView: View {
                 }
                 Spacer()
             }
-            .padding(.horizontal, 16)
 
+            // Kartları tutan View
             PlayerHandView(
                 player: human,
                 validCards: validCards,
                 onCardSelected: { card in gameState.playCard(card, by: human) }
             )
+            .frame(maxWidth: .infinity) // Genişleyebildiği kadar genişlesin
         }
     }
 }

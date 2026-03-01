@@ -3,203 +3,110 @@ import SwiftUI
 struct BiddingView: View {
     @ObservedObject var gameState: GameState
     let onContractSelected: (ContractType) -> Void
-    private let dummyCard = Card(suit: .spades, rank: .two)
 
     var body: some View {
         ZStack {
-            // Lüks Kumarhane Arkaplanı
-            Color.black.ignoresSafeArea()
-            RadialGradient(
-                colors: [Color(red: 0.1, green: 0.35, blue: 0.15), Color.black],
-                center: .center,
-                startRadius: 50,
-                endRadius: 800
-            ).ignoresSafeArea()
+            // MERKEZ MODAL
+            VStack(spacing: 20) {
+                // Kim seçiyor & Başlık
+                VStack(spacing: 6) {
+                    Text("KONTRAT SEÇİMİ")
+                        .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                        .foregroundColor(.goldLight)
+                        .kerning(3)
 
-            VStack(spacing: 0) {
-                // Üst alan — Kuzey AI kartları + plaka
-                northPreview
-                    .padding(.top, 12)
+                    Text(gameState.biddingPlayer.name)
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.white)
 
-                HStack(spacing: 0) {
-                    westPreview
-                    // MERKEZ — seçim ekranı
-                    centerBidding
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    eastPreview
+                    Text("El \(gameState.roundNumber + 1) / 20")
+                        .font(.system(size: 14, weight: .medium, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.6))
                 }
-                .frame(maxHeight: .infinity)
+                .padding(.bottom, 10)
 
-                // Alt — İnsan eli
-                southHand
-                    .padding(.bottom, 10)
-            }
-        }
-        .frame(minWidth: 1050, minHeight: 780)
-    }
-
-    // MARK: - Kuzey Preview
-    var northPreview: some View {
-        let p = gameState.players[1]
-        return VStack(spacing: 6) {
-            PlayerInfoPanel(player: p, isActive: false, contract: nil)
-            HStack(spacing: -20) {
-                ForEach(0..<p.hand.count, id: \.self) { _ in
-                    CardView(card: dummyCard, faceDown: true, width: 48)
+                // İlk tur uyarısı
+                if gameState.roundNumber < 4 {
+                    Text("⚠️ İlk 4 tur sadece ceza seçilebilir")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(Color(red: 1, green: 0.8, blue: 0.3))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color(red: 1, green: 0.5, blue: 0).opacity(0.2))
+                        .cornerRadius(8)
                 }
-            }
-            .frame(height: 72)
-        }
-    }
 
-    var westPreview: some View {
-        let p = gameState.players[2]
-        return VStack(spacing: 6) {
-            PlayerInfoPanel(player: p, isActive: false, contract: nil)
-            ZStack {
-                ForEach(Array(0..<min(p.hand.count, 8)).reversed(), id: \.self) { i in
-                    CardView(card: dummyCard, faceDown: true, width: 44)
-                        .rotationEffect(.degrees(90))
-                        .offset(y: CGFloat(i) * -8)
+                // KOZ BUTONLARI (ilk 4 elde gizli)
+                if gameState.roundNumber >= 4 {
+                    HStack(spacing: 12) {
+                        ForEach(trumpContracts, id: \.self) { c in
+                            TrumpButton(contract: c, isAvailable: isAvailable(c)) {
+                                onContractSelected(c)
+                            }
+                        }
+                    }
+                    .padding(.bottom, 5)
                 }
-            }
-            .frame(width: 80, height: 180)
-        }
-        .frame(width: 120)
-    }
 
-    var eastPreview: some View {
-        let p = gameState.players[3]
-        return VStack(spacing: 6) {
-            PlayerInfoPanel(player: p, isActive: false, contract: nil)
-            ZStack {
-                ForEach(Array(0..<min(p.hand.count, 8)).reversed(), id: \.self) { i in
-                    CardView(card: dummyCard, faceDown: true, width: 44)
-                        .rotationEffect(.degrees(-90))
-                        .offset(y: CGFloat(i) * -8)
-                }
-            }
-            .frame(width: 80, height: 180)
-        }
-        .frame(width: 120)
-    }
-
-    // MARK: - Merkez Bidding Paneli
-    var centerBidding: some View {
-        VStack(spacing: 14) {
-            // Kim seçiyor
-            VStack(spacing: 4) {
-                Text("KONTRAT SEÇİMİ")
-                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.5))
-                    .kerning(3)
-                Text(gameState.biddingPlayer.name)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(.white)
-                Text("El \(gameState.roundNumber + 1) / 20")
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.4))
-            }
-
-            // İlk tur uyarısı
-            if gameState.roundNumber < 4 {
-                Text("⚠️ İlk tur — Sadece ceza seçilebilir")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(Color(red: 1, green: 0.7, blue: 0.2))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(Color(red: 1, green: 0.5, blue: 0).opacity(0.15))
-                    .cornerRadius(8)
-            }
-
-            // KOZ BUTONLARI (ilk 4 elde gizli)
-            if gameState.roundNumber >= 4 {
-                HStack(spacing: 8) {
-                    ForEach(trumpContracts, id: \.self) { c in
-                        TrumpButton(contract: c, isAvailable: isAvailable(c)) {
-                            onContractSelected(c)
+                // CEZA BUTONLARI (2x3 grid)
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) {
+                        PenaltyButton(contract: .noTricks, isAvailable: isAvailable(.noTricks)) {
+                            onContractSelected(.noTricks)
+                        }
+                        PenaltyButton(contract: .noHearts, isAvailable: isAvailable(.noHearts)) {
+                            onContractSelected(.noHearts)
+                        }
+                    }
+                    HStack(spacing: 12) {
+                        PenaltyButton(contract: .noMales, isAvailable: isAvailable(.noMales)) {
+                            onContractSelected(.noMales)
+                        }
+                        PenaltyButton(contract: .noQueens, isAvailable: isAvailable(.noQueens)) {
+                            onContractSelected(.noQueens)
+                        }
+                    }
+                    HStack(spacing: 12) {
+                        PenaltyButton(contract: .rifki, isAvailable: isAvailable(.rifki)) {
+                            onContractSelected(.rifki)
+                        }
+                        PenaltyButton(contract: .lastTwo, isAvailable: isAvailable(.lastTwo)) {
+                            onContractSelected(.lastTwo)
                         }
                     }
                 }
             }
+            .padding(32)
+            // Cam efekti ve çift katmanlı arkaplan
+            .background(.ultraThinMaterial)
+            .background(Color.black.opacity(0.6))
+            .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 32, style: .continuous)
+                    .stroke(
+                        LinearGradient(colors: [Color.white.opacity(0.4), Color.white.opacity(0.1)], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        lineWidth: 1
+                    )
+            )
+            // Yüksek bir modal hissi vermek için dramatik gölge
+            .shadow(color: .black.opacity(0.4), radius: 30, x: 0, y: 20)
+            .shadow(color: Color.goldDark.opacity(0.1), radius: 10, x: 0, y: 0)
+            .frame(maxWidth: 500)
 
-            // CEZA BUTONLARI (2x3 grid)
-            VStack(spacing: 8) {
-                HStack(spacing: 8) {
-                    PenaltyButton(contract: .noTricks, isAvailable: isAvailable(.noTricks)) {
-                        onContractSelected(.noTricks)
-                    }
-                    PenaltyButton(contract: .noHearts, isAvailable: isAvailable(.noHearts)) {
-                        onContractSelected(.noHearts)
-                    }
-                }
-                HStack(spacing: 8) {
-                    PenaltyButton(contract: .noMales, isAvailable: isAvailable(.noMales)) {
-                        onContractSelected(.noMales)
-                    }
-                    PenaltyButton(contract: .noQueens, isAvailable: isAvailable(.noQueens)) {
-                        onContractSelected(.noQueens)
-                    }
-                }
-                HStack(spacing: 8) {
-                    PenaltyButton(contract: .rifki, isAvailable: isAvailable(.rifki)) {
-                        onContractSelected(.rifki)
-                    }
-                    PenaltyButton(contract: .lastTwo, isAvailable: isAvailable(.lastTwo)) {
-                        onContractSelected(.lastTwo)
-                    }
+            // ALT KISIM - OYUNCUNUN KARTLARI
+            VStack {
+                Spacer()
+                if let human = gameState.players.first(where: { !$0.isAI }) {
+                    PlayerHandView(
+                        player: human,
+                        validCards: [], // İhale aşamasında kart seçilmez
+                        onCardSelected: { _ in }
+                    )
+                    .padding(.bottom, 8)
                 }
             }
         }
-        .padding(24)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(.ultraThinMaterial)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color.black.opacity(0.4))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.white.opacity(0.15), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.3), radius: 15, x: 0, y: 10)
-        .padding(.horizontal, 24)
     }
-
-    // MARK: - Alt — İnsan Eli
-    var southHand: some View {
-        let human = gameState.players[0]
-        let sorted = human.hand.sorted {
-            $0.suit.rawValue == $1.suit.rawValue
-                ? $0.rank < $1.rank
-                : $0.suit.rawValue < $1.suit.rawValue
-        }
-        let half = (sorted.count + 1) / 2
-        let topRow = Array(sorted.prefix(half))
-        let bottomRow = Array(sorted.dropFirst(half))
-
-        return VStack(spacing: 6) {
-            PlayerInfoPanel(player: human, isActive: true, contract: nil)
-            VStack(spacing: 4) {
-                biddingCardRow(cards: topRow)
-                biddingCardRow(cards: bottomRow)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-        }
-        .padding(.horizontal, 12)
-    }
-
-    func biddingCardRow(cards: [Card]) -> some View {
-        HStack(spacing: -18) {
-            ForEach(cards, id: \.id) { card in
-                CardView(card: card, isPlayable: true, width: 96)
-            }
-        }
-    }
-
     // MARK: - Yardımcılar
     var trumpContracts: [ContractType] {
         [.trumpSpades, .trumpHearts, .trumpClubs, .trumpDiamonds]
@@ -217,11 +124,13 @@ struct BiddingView: View {
     }
 }
 
-// MARK: - Koz Butonu (küçük sembol)
+// MARK: - Koz Butonu
 struct TrumpButton: View {
     let contract: ContractType
     let isAvailable: Bool
     let action: () -> Void
+
+    @State private var isHovered = false
 
     var suitColor: Color {
         switch contract {
@@ -233,7 +142,7 @@ struct TrumpButton: View {
     var body: some View {
         Button(action: { if isAvailable { action() } }) {
             ZStack {
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(
                         isAvailable
                             ? LinearGradient(
@@ -243,43 +152,48 @@ struct TrumpButton: View {
                                 colors: [Color.white.opacity(0.1), Color.white.opacity(0.05)],
                                 startPoint: .top, endPoint: .bottom)
                     )
-                    .frame(width: 64, height: 64)
+                    .frame(width: 72, height: 72)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color.white.opacity(isAvailable ? 0.4 : 0.1), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.white.opacity(isAvailable ? (isHovered ? 0.8 : 0.4) : 0.1), lineWidth: isHovered && isAvailable ? 2 : 1)
                     )
-                    .shadow(
-                        color: isAvailable ? Color.goldDark.opacity(0.4) : .clear, radius: 6, x: 0,
-                        y: 3)
+                    .shadow(color: isAvailable ? Color.goldDark.opacity(isHovered ? 0.6 : 0.3) : .clear, radius: isHovered ? 10 : 5, x: 0, y: isHovered ? 5 : 2)
 
                 Text(contract.symbol)
-                    .font(.system(size: 32, weight: .regular))
-                    .foregroundColor(isAvailable ? suitColor : Color.white.opacity(0.3))
+                    .font(.system(size: 38, weight: .regular))
+                    .foregroundColor(isAvailable ? suitColor : Color.white.opacity(0.2))
             }
+            .scaleEffect(isHovered && isAvailable ? 1.05 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isHovered)
         }
         .buttonStyle(.plain)
         .disabled(!isAvailable)
+        .onHover { hovering in
+            isHovered = hovering
+        }
     }
 }
 
-// MARK: - Ceza Butonu (geniş altın)
+// MARK: - Ceza Butonu
 struct PenaltyButton: View {
     let contract: ContractType
     let isAvailable: Bool
     let action: () -> Void
 
+    @State private var isHovered = false
+
     var body: some View {
         Button(action: { if isAvailable { action() } }) {
             Text(contract.rawValue.uppercased())
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: 15, weight: .bold, design: .rounded))
                 .foregroundColor(
                     isAvailable
-                        ? Color(red: 0.15, green: 0.08, blue: 0.01) : Color.white.opacity(0.4)
+                        ? Color(red: 0.1, green: 0.05, blue: 0.0) : Color.white.opacity(0.3)
                 )
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .padding(.vertical, 18)
                 .background(
-                    RoundedRectangle(cornerRadius: 14)
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(
                             isAvailable
                                 ? LinearGradient(
@@ -290,15 +204,18 @@ struct PenaltyButton: View {
                                     startPoint: .topLeading, endPoint: .bottomTrailing)
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(Color.white.opacity(isAvailable ? 0.4 : 0.1), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(Color.white.opacity(isAvailable ? (isHovered ? 0.8 : 0.4) : 0.1), lineWidth: isHovered && isAvailable ? 2 : 1)
                         )
-                        .shadow(
-                            color: isAvailable ? Color.goldDark.opacity(0.5) : .clear, radius: 5,
-                            x: 0, y: 3)
+                        .shadow(color: isAvailable ? Color.goldDark.opacity(isHovered ? 0.6 : 0.3) : .clear, radius: isHovered ? 10 : 5, x: 0, y: isHovered ? 5 : 2)
                 )
+                .scaleEffect(isHovered && isAvailable ? 1.03 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isHovered)
         }
         .buttonStyle(.plain)
         .disabled(!isAvailable)
+        .onHover { hovering in
+            isHovered = hovering
+        }
     }
 }

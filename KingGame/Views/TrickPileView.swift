@@ -23,7 +23,7 @@ struct TrickPileView: View {
             if let trick = trick {
                 ForEach(Array(trick.cards.enumerated()), id: \.offset) { _, play in
                     let dir = directionOf(play.player)
-                    CardView(card: play.card, isPlayable: false, width: 78)
+                    CardView(card: play.card, isPlayable: false, width: 95) // Boyut büyütüldü
                         .offset(offsetFor(dir))
                         .transition(.asymmetric(
                             insertion: .scale(scale: 0.5).combined(with: .opacity),
@@ -32,16 +32,16 @@ struct TrickPileView: View {
                 }
             }
         }
-        .frame(width: 380, height: 320)
+        .frame(width: 420, height: 380)
         .animation(.spring(response: 0.28, dampingFraction: 0.72), value: trick?.cards.count ?? 0)
     }
 
     func offsetFor(_ dir: TableDirection) -> CGSize {
         switch dir {
-        case .south: return CGSize(width: 0,    height: 108)
-        case .north: return CGSize(width: 0,    height: -108)
-        case .west:  return CGSize(width: -148, height: 0)
-        case .east:  return CGSize(width: 148,  height: 0)
+        case .south: return CGSize(width: 0,    height: 125)
+        case .north: return CGSize(width: 0,    height: -125)
+        case .west:  return CGSize(width: -165, height: 0)
+        case .east:  return CGSize(width: 165,  height: 0)
         }
     }
 }

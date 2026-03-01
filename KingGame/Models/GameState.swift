@@ -2,7 +2,7 @@ import Combine
 import Foundation
 
 enum GamePhase {
-    case setup, bidding, playing, gameEnd
+    case setup, bidding, playing, roundEnd, gameEnd
 }
 
 struct ScoreEntry: Identifiable {
@@ -157,7 +157,7 @@ class GameState: ObservableObject {
         if card.isRifki && round.contract == .rifki {
             isProcessingTrick = true
             currentRound = round
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
                 self?.finalizeTrick(forced: true)
                 self?.isProcessingTrick = false
             }
@@ -168,7 +168,7 @@ class GameState: ObservableObject {
         if count >= 4 {
             isProcessingTrick = true
             currentRound = round
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) { [weak self] in
                 self?.finalizeTrick(forced: false)
                 self?.isProcessingTrick = false
             }
@@ -338,14 +338,18 @@ class GameState: ObservableObject {
         if roundNumber >= 20 {
             endGame()
         } else {
-            players.forEach { $0.resetForNewRound() }
-            nextBiddingPlayer()
-            dealCards()
-            currentPlayerIndex = biddingPlayerIndex
-            phase = .bidding
-            message = "\(biddingPlayer.name) kontrat seçiyor..."
-            scheduleAIBiddingIfNeeded()
+            phase = .roundEnd
         }
+    }
+
+    func startNextRound() {
+        players.forEach { $0.resetForNewRound() }
+        nextBiddingPlayer()
+        dealCards()
+        currentPlayerIndex = biddingPlayerIndex
+        phase = .bidding
+        message = "\(biddingPlayer.name) kontrat seçiyor..."
+        scheduleAIBiddingIfNeeded()
     }
 
     // MARK: - King

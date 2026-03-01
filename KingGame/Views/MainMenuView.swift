@@ -2,100 +2,110 @@ import SwiftUI
 
 struct MainMenuView: View {
     @ObservedObject var gameState: GameState
+    @State private var isHovered = false
 
     var body: some View {
-        ZStack {
-            // Ahşap arka plan
-            Color.woodDark.ignoresSafeArea()
+        VStack(spacing: 40) {
+            Spacer()
 
-            VStack(spacing: 40) {
-                Spacer()
+            // Logo Bölümü
+            VStack(spacing: 5) { // Tac ile KING yazısı arasındaki boşluğu azalttık
+                // Kral Tacı
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 80)) // Taç boyutunu büyüttük
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.goldLight, Color.goldMid, Color.goldDark],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: Color.goldDark.opacity(0.8), radius: 15, x: 0, y: 5)
+                    .padding(.bottom, -10) // Tacın altından KING yazısına biraz daha yaklaşması için
 
-                // Logo
-                VStack(spacing: 10) {
-                    // Koz sembolleri
+                Text("KING")
+                    .font(.system(size: 84, weight: .heavy, design: .serif)) // Yazıyı da biraz büyüttük
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.8), radius: 5, x: 0, y: 3)
+            }
+
+            // Oyuncu Listesi Paneli (Glassmorphism)
+            VStack(spacing: 0) {
+                ForEach(Array(gameState.players.enumerated()), id: \.offset) { i, player in
                     HStack(spacing: 16) {
-                        Text("♠").font(.system(size: 40)).foregroundColor(.black)
-                        Text("♥").font(.system(size: 40)).foregroundColor(Color(red:0.85,green:0.1,blue:0.1))
-                        Text("♣").font(.system(size: 40)).foregroundColor(.black)
-                        Text("♦").font(.system(size: 40)).foregroundColor(Color(red:0.85,green:0.1,blue:0.1))
+                        // Yön göstergesi
+                        Text(["G", "K", "B", "D"][i])
+                            .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                            .foregroundColor(Color.goldLight)
+                            .frame(width: 24)
+
+                        Image(systemName: player.isAI ? "cpu" : "person.fill")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(player.isAI ? Color.goldMid : .green)
+
+                        Text(player.name)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+
+                        Spacer()
+
+                        Text(typeLabel(player.type))
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.6))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.black.opacity(0.4))
+                            .cornerRadius(6)
                     }
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background(i % 2 == 0 ? Color.white.opacity(0.04) : Color.clear)
+                }
+            }
+            .background(.ultraThinMaterial)
+            .background(Color.black.opacity(0.4))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.white.opacity(0.15), lineWidth: 1))
+            .shadow(color: .black.opacity(0.4), radius: 20, x: 0, y: 10)
+            .padding(.horizontal, 60)
+
+            // Başlat Butonu
+            Button(action: { gameState.startGame() }) {
+                Text("OYUNU BAŞLAT")
+                    .font(.system(size: 18, weight: .heavy, design: .rounded))
+                    .foregroundColor(Color(red:0.1, green:0.05, blue:0.0))
+                    .padding(.horizontal, 60)
+                    .padding(.vertical, 20)
                     .background(
                         LinearGradient(colors: [Color.goldLight, Color.goldMid, Color.goldDark],
-                                       startPoint: .top, endPoint: .bottom)
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
                     )
-                    .cornerRadius(16)
-                    .shadow(color: Color.goldDark.opacity(0.6), radius: 8, x: 0, y: 4)
-
-                    Text("KING")
-                        .font(.system(size: 64, weight: .heavy, design: .serif))
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.5), radius: 4)
-                }
-
-                // Oyuncu listesi
-                VStack(spacing: 0) {
-                    ForEach(Array(gameState.players.enumerated()), id: \.offset) { i, player in
-                        HStack(spacing: 12) {
-                            // Yön göstergesi
-                            Text(["G", "K", "B", "D"][i])
-                                .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                                .foregroundColor(Color.goldMid)
-                                .frame(width: 20)
-
-                            Image(systemName: player.isAI ? "cpu" : "person.fill")
-                                .foregroundColor(player.isAI ? Color.goldMid : .green)
-
-                            Text(player.name)
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundColor(.white)
-
-                            Spacer()
-
-                            Text(typeLabel(player.type))
-                                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                                .foregroundColor(.white.opacity(0.4))
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(i % 2 == 0 ? Color.white.opacity(0.05) : Color.clear)
-                    }
-                }
-                .background(Color.black.opacity(0.3))
-                .cornerRadius(14)
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goldMid.opacity(0.2), lineWidth: 1))
-                .padding(.horizontal, 60)
-
-                // Başlat butonu
-                Button(action: { gameState.startGame() }) {
-                    Text("OYUNU BAŞLAT")
-                        .font(.system(size: 16, weight: .heavy, design: .rounded))
-                        .foregroundColor(Color(red:0.15, green:0.08, blue:0.01))
-                        .padding(.horizontal, 60)
-                        .padding(.vertical, 18)
-                        .background(
-                            LinearGradient(colors: [Color.goldLight, Color.goldMid, Color.goldDark],
-                                           startPoint: .top, endPoint: .bottom)
-                        )
-                        .cornerRadius(14)
-                        .shadow(color: Color.goldDark.opacity(0.7), radius: 8, x: 0, y: 4)
-                }
-                .buttonStyle(.plain)
-
-                Spacer()
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule().stroke(Color.white.opacity(isHovered ? 0.6 : 0.2), lineWidth: isHovered ? 2 : 1)
+                    )
+                    .shadow(color: Color.goldDark.opacity(isHovered ? 0.8 : 0.4), radius: isHovered ? 15 : 8, x: 0, y: isHovered ? 8 : 4)
             }
-            .frame(maxWidth: 500)
+            .buttonStyle(.plain)
+            .contentShape(Capsule())
+            .focusable(false)
+            .scaleEffect(isHovered ? 1.05 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isHovered)
+            .onHover { hovering in
+                isHovered = hovering
+            }
+
+            Spacer()
         }
+        .frame(maxWidth: 550)
     }
 
     func typeLabel(_ t: PlayerType) -> String {
         switch t {
         case .human:         return "İNSAN"
-        case .aiAggressive:  return "AI — AGRESİF"
-        case .aiBalanced:    return "AI — DENGELİ"
-        case .aiCalculator:  return "AI — HESAPÇI"
+        case .aiAggressive:  return "AI: AGRESİF"
+        case .aiBalanced:    return "AI: DENGELİ"
+        case .aiCalculator:  return "AI: HESAPÇI"
         }
     }
 }
