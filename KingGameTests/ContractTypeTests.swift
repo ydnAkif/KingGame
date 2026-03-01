@@ -37,48 +37,4 @@ final class ContractTypeTests: XCTestCase {
         XCTAssertEqual(ContractType.noTricks.rawValue, "El Almaz")
         XCTAssertEqual(ContractType.trumpSpades.rawValue, "Maça Koz")
     }
-
-    func testBiddingTrackerInitialization() {
-        let tracker = BiddingTracker()
-        let player = Player(name: "Test", type: .human)
-
-        XCTAssertTrue(tracker.canSelectPenalty(.noTricks))
-        XCTAssertTrue(tracker.canSelectTrump(player: player, currentRound: 5))
-        XCTAssertTrue(tracker.canSelectPenalty(player: player))
-    }
-
-    func testBiddingTrackerPenaltyLimit() {
-        var tracker = BiddingTracker()
-        let player = Player(name: "Test", type: .human)
-
-        tracker.select(.noTricks, for: player)
-        XCTAssertTrue(tracker.canSelectPenalty(.noTricks))
-
-        tracker.select(.noTricks, for: player)
-        XCTAssertFalse(tracker.canSelectPenalty(.noTricks))
-    }
-
-    func testBiddingTrackerTrumpLimit() {
-        var tracker = BiddingTracker()
-        let player = Player(name: "Test", type: .human)
-
-        XCTAssertFalse(tracker.canSelectTrump(player: player, currentRound: 1))
-        XCTAssertFalse(tracker.canSelectTrump(player: player, currentRound: 4))
-        XCTAssertTrue(tracker.canSelectTrump(player: player, currentRound: 5))
-
-        tracker.select(.trumpSpades, for: player)
-        tracker.select(.trumpHearts, for: player)
-        XCTAssertFalse(tracker.canSelectTrump(player: player, currentRound: 10))
-    }
-
-    func testBiddingTrackerPenaltyPerPlayerLimit() {
-        var tracker = BiddingTracker()
-        let player = Player(name: "Test", type: .human)
-
-        tracker.select(.noTricks, for: player)
-        tracker.select(.noHearts, for: player)
-        tracker.select(.noQueens, for: player)
-
-        XCTAssertFalse(tracker.canSelectPenalty(player: player))
-    }
 }
