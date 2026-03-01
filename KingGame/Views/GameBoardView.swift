@@ -22,7 +22,7 @@ struct PlayerInfoPanel: View {
     var body: some View {
         VStack(alignment: .center, spacing: 5) {
             // İsim
-            Text(player.name)
+            Text(player.name.components(separatedBy: "-").first ?? player.name)
                 .font(.system(size: 15, weight: .bold, design: .rounded))
                 .foregroundColor(isActive ? Color.goldLight : .white.opacity(0.9))
                 .lineLimit(1)
@@ -40,11 +40,6 @@ struct PlayerInfoPanel: View {
                             player.roundScore > 0
                                 ? .green.opacity(0.8) : Color(red: 1, green: 0.5, blue: 0.5))
                 }
-            }
-
-            // Aldığı el / yediği kartlar
-            if let contract = contract {
-                eatenLine(contract: contract)
             }
         }
         .frame(width: 110, height: 65)
@@ -66,52 +61,56 @@ struct PlayerInfoPanel: View {
             color: isActive ? Color.goldLight.opacity(0.3) : .black.opacity(0.5),
             radius: isActive ? 8 : 4, x: 0, y: 3)
     }
+}
 
-    @ViewBuilder
-    func eatenLine(contract: ContractType) -> some View {
-        switch contract {
-        case .noQueens:
-            badgeRow(cards: player.wonCards.filter { $0.isQueen })
-        case .noMales:
-            badgeRow(cards: player.wonCards.filter { $0.isMale })
-        case .noHearts:
-            badgeRow(cards: player.wonCards.filter { $0.isHeart })
-        case .rifki:
-            badgeRow(cards: player.wonCards.filter { $0.isRifki })
-        case .noTricks, .lastTwo:
-            if player.tricksWon > 0 {
-                Text("\(player.tricksWon) el")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.6))
-            }
-        default:
-            if player.tricksWon > 0 {
-                Text("\(player.tricksWon) el")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundColor(.green.opacity(0.7))
+// MARK: - Yenilen (Ceza) Kartları Gösterimi
+struct PlayerPenaltyCardsView: View {
+    let player: Player
+    let contract: ContractType?
+
+    var body: some View {
+        if let contract = contract {
+            let penaltyCards = getPenaltyCards(for: contract)
+            if !penaltyCards.isEmpty {
+                HStack(spacing: -12) {
+                    ForEach(penaltyCards, id: \.id) { card in
+                        CardView(card: card, isPlayable: false, width: 35)
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                    }
+                }
+                .padding(6)
+                .background(.ultraThinMaterial)
+                .background(Color.black.opacity(0.3))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8).stroke(
+                        Color.white.opacity(0.15), lineWidth: 1))
+            } else if contract == .noTricks || contract == .lastTwo || contract.isTrump {
+                if player.tricksWon > 0 {
+                    Text("\(player.tricksWon) EL")
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .foregroundColor(
+                            contract.isTrump ? Color.goldLight : Color.white.opacity(0.8)
+                        )
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(.ultraThinMaterial)
+                        .background(Color.black.opacity(0.3))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8).stroke(
+                                Color.white.opacity(0.15), lineWidth: 1))
+                }
             }
         }
     }
 
-    @ViewBuilder
-    func badgeRow(cards: [Card]) -> some View {
-        if !cards.isEmpty {
-            HStack(spacing: 2) {
-                ForEach(cards, id: \.id) { card in
-                    Text(card.shortName)
-                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                        .foregroundColor(
-                            card.suit.isRed
-                                ? Color(red: 1, green: 0.35, blue: 0.35) : .white.opacity(0.8)
-                        )
-                        .padding(.horizontal, 3)
-                        .padding(.vertical, 1)
-                        .background(
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(Color.black.opacity(0.4))
-                        )
-                }
-            }
+    private func getPenaltyCards(for contract: ContractType) -> [Card] {
+        switch contract {
+        case .noQueens: return player.wonCards.filter { $0.isQueen }
+        case .noMales: return player.wonCards.filter { $0.isMale }
+        case .noHearts: return player.wonCards.filter { $0.isHeart }
+        case .rifki: return player.wonCards.filter { $0.isRifki }
+        default: return []
         }
     }
 }
@@ -150,7 +149,7 @@ struct GameBoardView: View {
             let tableY = geo.size.height / 2 - 80
 
             ZStack {
-                // Katman 2: Masa Hattı (Hafif bir iç stroke veya gölge verebilir)
+                // Katman 2: Masa Hattı
                 RoundedRectangle(cornerRadius: 32)
                     .fill(Color.clear)
                     .overlay(
@@ -166,35 +165,56 @@ struct GameBoardView: View {
                     Spacer()
                 }
 
-                // Katman 4: Kuzey oyuncu — masanin ust kenarinda
-                VStack(spacing: 4) {
-                    northPanel
+                // Katman 4: Kuzey oyuncu
+                VStack(spacing: 8) {
+                    HStack(spacing: 12) {
+                        PlayerInfoPanel(
+                            player: player(at: .north),
+                            isActive: gameState.currentPlayer.id == player(at: .north).id,
+                            contract: currentContract)
+                        PlayerPenaltyCardsView(
+                            player: player(at: .north), contract: currentContract)
+                    }
                     northCards
                 }
                 .position(x: tableX, y: tableY - tableH / 2 + 10)
 
-                // Katman 5: Bati oyuncu — masanin sol kenarinda
-                HStack(spacing: 6) {
-                    westPanel
+                // Katman 5: Bati oyuncu
+                HStack(spacing: 12) {
+                    VStack(spacing: 8) {
+                        PlayerInfoPanel(
+                            player: player(at: .west),
+                            isActive: gameState.currentPlayer.id == player(at: .west).id,
+                            contract: currentContract)
+                        PlayerPenaltyCardsView(player: player(at: .west), contract: currentContract)
+                    }
                     westCards
                 }
                 .position(x: 130, y: tableY)
 
-                // Katman 6: Dogu oyuncu — masanin sag kenarinda
-                HStack(spacing: 6) {
+                // Katman 6: Dogu oyuncu
+                HStack(spacing: 12) {
                     eastCards
-                    eastPanel
+                    VStack(spacing: 8) {
+                        PlayerInfoPanel(
+                            player: player(at: .east),
+                            isActive: gameState.currentPlayer.id == player(at: .east).id,
+                            contract: currentContract)
+                        PlayerPenaltyCardsView(player: player(at: .east), contract: currentContract)
+                    }
                 }
                 .position(x: geo.size.width - 130, y: tableY)
 
                 // Katman 7: Merkez — oynanan kartlar
                 TrickPileView(
                     trick: gameState.currentRound?.currentTrick,
+                    lastTrick: gameState.lastTrick,
+                    lastTrickWinner: gameState.lastTrickWinner,
                     directionOf: { direction(for: $0) }
                 )
                 .position(x: tableX, y: tableY)
 
-                // Katman 8: Guney — insan oyuncu (alt kisim)
+                // Katman 8: Guney — insan oyuncu
                 VStack(spacing: 0) {
                     Spacer()
                     southZone
@@ -209,7 +229,7 @@ struct GameBoardView: View {
         HStack {
             if let round = gameState.currentRound {
                 HStack(spacing: 12) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         Text(round.contract.symbol)
                             .font(.system(size: 20))
                             .foregroundColor(round.contract.isTrump ? Color.goldLight : .white)
@@ -224,18 +244,8 @@ struct GameBoardView: View {
                         .font(.system(size: 11, weight: .heavy, design: .monospaced))
                         .foregroundColor(.white.opacity(0.7))
 
-                    if round.heartsOpened {
-                        Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
-                        Text("♥ AÇIK")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(red: 1, green: 0.3, blue: 0.3))
-                    }
-                    if round.contract.isTrump && round.trumpOpened {
-                        Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
-                        Text("KOZ AÇIK")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundColor(Color.goldLight)
-                    }
+                    // Akıllı Ceza / Durum Göstergesi
+                    smartProgressIndicator(round: round)
                 }
                 .padding(.horizontal, 20).padding(.vertical, 8)
                 .background(.ultraThinMaterial)
@@ -251,6 +261,66 @@ struct GameBoardView: View {
             trickCounterBar
         }
         .padding(.horizontal, 20).padding(.top, 12)
+    }
+
+    @ViewBuilder
+    func smartProgressIndicator(round: Round) -> some View {
+        let allWonCards =
+            gameState.players.flatMap { $0.wonCards }
+            + (round.currentTrick?.cards.map { $0.card } ?? [])
+
+        switch round.contract {
+        case .noHearts:
+            let taken = allWonCards.filter { $0.isHeart }.count
+            Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
+            Text("♥ \(taken)/13")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundColor(
+                    taken > 0 ? Color(red: 1, green: 0.3, blue: 0.3) : .white.opacity(0.5))
+        case .noQueens:
+            let taken = allWonCards.filter { $0.isQueen }.count
+            Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
+            Text("KIZ: \(taken)/4")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundColor(taken > 0 ? Color.goldMid : .white.opacity(0.5))
+        case .noMales:
+            let taken = allWonCards.filter { $0.isMale }.count
+            Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
+            Text("ERKEK: \(taken)/8")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundColor(taken > 0 ? Color.blue.opacity(0.8) : .white.opacity(0.5))
+        case .rifki:
+            let isTaken = allWonCards.contains { $0.isRifki }
+            Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
+            Text("RIFKI: \(isTaken ? "ÇIKTI" : "BEKLENİYOR")")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundColor(
+                    isTaken ? Color(red: 1, green: 0.3, blue: 0.3) : .white.opacity(0.5))
+        case .lastTwo:
+            let tricksPlayed = round.tricks.count + (round.currentTrick != nil ? 1 : 0)
+            Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
+            Text("LÖVE: \(tricksPlayed)/13")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundColor(tricksPlayed >= 12 ? Color.red : .white.opacity(0.5))
+        case .noTricks:
+            let tricksPlayed = round.tricks.count + (round.currentTrick != nil ? 1 : 0)
+            Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
+            Text("LÖVE: \(tricksPlayed)/13")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundColor(.white.opacity(0.5))
+        default:
+            if round.contract.isTrump && round.trumpOpened {
+                Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
+                Text("KOZ AÇIK")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(Color.goldLight)
+            } else if round.heartsOpened {
+                Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
+                Text("♥ AÇIK")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(Color(red: 1, green: 0.3, blue: 0.3))
+            }
+        }
     }
 
     var trickCounterBar: some View {
@@ -394,7 +464,7 @@ struct GameBoardView: View {
                 validCards: validCards,
                 onCardSelected: { card in gameState.playCard(card, by: human) }
             )
-            .frame(maxWidth: .infinity) // Genişleyebildiği kadar genişlesin
+            .frame(maxWidth: .infinity)  // Genişleyebildiği kadar genişlesin
         }
     }
 }

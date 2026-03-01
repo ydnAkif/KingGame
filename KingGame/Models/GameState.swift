@@ -35,6 +35,9 @@ class GameState: ObservableObject {
     @Published var biddingPlayerIndex: Int = 0
     @Published var roundNumber: Int = 0
 
+    @Published var lastTrick: Trick? = nil
+    @Published var lastTrickWinner: Player? = nil
+
     var playedCards: [Card] = []
     private var isProcessingTrick: Bool = false
 
@@ -153,22 +156,17 @@ class GameState: ObservableObject {
         let count = round.currentTrick?.cards.count ?? 0
         print("🃏 \(player.name) → \(card.displayName) [\(count)/4]")
 
-        // Rıfkı oynandı
-        if card.isRifki && round.contract == .rifki {
-            isProcessingTrick = true
-            currentRound = round
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-                self?.finalizeTrick(forced: true)
-                self?.isProcessingTrick = false
-            }
-            return
-        }
-
         // 4. kart
         if count >= 4 {
             isProcessingTrick = true
             currentRound = round
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) { [weak self] in
+
+            // Eğer rıfkı atıldıysa veya oyun bitecekse daha uzun süre bekleyelim
+            let willEndEarly = shouldEndEarly(round: round)
+            let isRifkiContract = round.contract == .rifki
+            let delay = (willEndEarly || isRifkiContract) ? 2.5 : 1.8
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
                 self?.finalizeTrick(forced: false)
                 self?.isProcessingTrick = false
             }
@@ -186,8 +184,12 @@ class GameState: ObservableObject {
         guard var round = currentRound else { return }
         guard let trick = round.currentTrick else { return }
 
+        // Animasyon için son eli kaydet
+        self.lastTrick = trick
+
         if let winner = trick.winner(contract: round.contract) {
             winner.winTrick()
+            self.lastTrickWinner = winner
 
             // Kazanan kart toplar (görüntüleme için)
             winner.wonCards.append(contentsOf: trick.allCards)
@@ -207,6 +209,11 @@ class GameState: ObservableObject {
                 round.currentTrick = nil
                 currentRound = round
                 handleKing(winner: winner)
+                // Animasyonu temizle
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                    self?.lastTrick = nil
+                    self?.lastTrickWinner = nil
+                }
                 return
             }
 
@@ -220,11 +227,18 @@ class GameState: ObservableObject {
         round.currentTrick = nil
         currentRound = round
 
+        // Animasyon bittikten sonra temizle
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            self?.lastTrick = nil
+            self?.lastTrickWinner = nil
+        }
+
         // Erken bitiş kontrolü
         if shouldEndEarly(round: round) || round.tricks.count >= 13 || forced {
             endRound(&round)
         } else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            // Animasyon süresince (0.6) bekle, sonra AI oynasın
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { [weak self] in
                 self?.scheduleAIPlayIfNeeded()
             }
         }
@@ -232,6 +246,10 @@ class GameState: ObservableObject {
 
     // MARK: - Erken Bitiş Kontrolü
     private func shouldEndEarly(round: Round) -> Bool {
+        let allWonCards = players.flatMap { $0.wonCards }
+        let currentTrickCards = round.currentTrick?.cards.map { $0.card } ?? []
+        let allCardsToEvaluate = allWonCards + currentTrickCards
+
         switch round.contract {
         case .noTricks, .lastTwo:
             // 13 löve oynanmak zorunda
@@ -239,22 +257,22 @@ class GameState: ObservableObject {
 
         case .noHearts:
             // Tüm 13 kupa alındıysa biter, aksi halde 13 löve oynanır
-            let heartsTaken = players.flatMap { $0.wonCards }.filter { $0.isHeart }.count
+            let heartsTaken = allCardsToEvaluate.filter { $0.isHeart }.count
             return heartsTaken >= 13
 
         case .noQueens:
             // Tüm 4 kız alındıysa biter
-            let queensTaken = players.flatMap { $0.wonCards }.filter { $0.isQueen }.count
+            let queensTaken = allCardsToEvaluate.filter { $0.isQueen }.count
             return queensTaken >= 4
 
         case .noMales:
             // Tüm 8 erkek (4K + 4J) alındıysa biter
-            let malesTaken = players.flatMap { $0.wonCards }.filter { $0.isMale }.count
+            let malesTaken = allCardsToEvaluate.filter { $0.isMale }.count
             return malesTaken >= 8
 
         case .rifki:
             // Rıfkı alındıysa biter
-            let rifkiTaken = players.flatMap { $0.wonCards }.contains { $0.isRifki }
+            let rifkiTaken = allCardsToEvaluate.contains { $0.isRifki }
             return rifkiTaken
 
         case .trumpSpades, .trumpHearts, .trumpDiamonds, .trumpClubs:

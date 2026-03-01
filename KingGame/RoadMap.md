@@ -129,10 +129,10 @@ KingGame/
 
 ### Faz 2 — Animasyonlar
 - [ ] Kart dağıtım animasyonu (oyun başında)
-- [ ] Kart atma animasyonu (`matchedGeometryEffect`)
-- [ ] Löve toplama animasyonu (kartlar kazananın önüne kayar)
+- [x] Kart atma animasyonu (`matchedGeometryEffect` veya `transition`)
+- [x] Löve toplama animasyonu (kartlar kazananın önüne uçar)
 - [ ] King kutlama animasyonu (konfeti/parıltı)
-- [ ] El değişimi geçiş animasyonu
+- [x] El değişimi geçiş animasyonu (El sonu skorbordu)
 
 ### Faz 3 — Ses
 - [ ] Kart atma sesi
@@ -143,8 +143,9 @@ KingGame/
 
 ### Faz 4 — UI Geliştirmeleri
 - [ ] Bidding ekranında "bu kartla riskli" uyarısı
-- [ ] Oyun içi skor geçmişi paneli (yan panel)
+- [x] Oyun içi skor geçmişi paneli (yan panel yerine üst barda akıllı gösterge)
 - [x] Her elin özet ekranı (el bittikten sonra kısa süre göster)
+- [x] Yenilen ceza kartlarının mini deste olarak gösterimi
 - [ ] Ayarlar ekranı (AI zorluğu, animasyon hızı, ses)
 - [ ] Renk temaları (klasik yeşil, lacivert, bordo)
 - [ ] iPad / iOS desteği (layout adaptasyonu)
