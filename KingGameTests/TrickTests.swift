@@ -3,6 +3,7 @@ import XCTest
 @testable import KingGame
 
 // MARK: - Trick Tests
+@MainActor
 final class TrickTests: XCTestCase {
 
     func testTrickInitialization() {
@@ -92,6 +93,7 @@ final class TrickTests: XCTestCase {
 }
 
 // MARK: - Round Tests
+@MainActor
 final class RoundTests: XCTestCase {
 
     func testRoundInitialization() {
@@ -134,3 +136,4 @@ final class RoundTests: XCTestCase {
         XCTAssertTrue(round.isLastTwo(trickNumber: 13))
     }
 }
+

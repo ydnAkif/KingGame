@@ -56,6 +56,8 @@ enum SoundType: String, CaseIterable {
 /// - Important: Call `preloadSounds()` at app launch for instant playback.
 class AudioManager: ObservableObject {
 
+    static var isTesting: Bool = (ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil)
+
     // MARK: - Singleton
 
     /// Shared audio manager instance
@@ -93,7 +95,7 @@ class AudioManager: ObservableObject {
     // MARK: - Initialization
 
     private init() {
-        preloadSounds()
+        if !AudioManager.isTesting { preloadSounds() }
     }
 
     // MARK: - Public Methods
@@ -103,6 +105,7 @@ class AudioManager: ObservableObject {
     /// - Returns: `true` if sound started playing, `false` if muted or unavailable
     @discardableResult
     func play(_ sound: SoundType) -> Bool {
+        if AudioManager.isTesting { return false }
         guard !isMuted, isSoundEnabled else { return false }
 
         if let player = audioPlayers[sound] {
@@ -157,6 +160,7 @@ class AudioManager: ObservableObject {
     /// Loads a sound from the bundle.
     /// - Parameter sound: The sound type to load
     private func loadSound(_ sound: SoundType) {
+        guard !AudioManager.isTesting else { return }
         guard audioPlayers[sound] == nil else { return }
 
         if let url = Bundle.main.url(
@@ -209,3 +213,4 @@ extension AudioManager {
         play(.error)
     }
 }
+

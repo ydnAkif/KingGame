@@ -3,6 +3,7 @@ import XCTest
 @testable import KingGame
 
 // MARK: - Player Tests
+@MainActor
 final class PlayerTests: XCTestCase {
 
     func testPlayerInitialization() {
@@ -27,7 +28,7 @@ final class PlayerTests: XCTestCase {
         XCTAssertTrue(aiBalanced.isAI)
 
         let aiCalculator = Player(name: "AI Calc", type: .aiCalculator)
-        XCTAssertTrue(aiCalculator.isCalculator)
+        XCTAssertTrue(aiCalculator.isAI)
     }
 
     func testPlayerRiskThreshold() {

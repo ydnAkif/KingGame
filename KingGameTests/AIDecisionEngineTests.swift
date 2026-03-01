@@ -3,6 +3,7 @@ import XCTest
 @testable import KingGame
 
 // MARK: - AIDecisionEngine Tests
+@MainActor
 final class AIDecisionEngineTests: XCTestCase {
 
     func testSelectCardReturnsValidCard() {
@@ -117,7 +118,7 @@ final class AIDecisionEngineTests: XCTestCase {
 
     func testSelectContractWithValidation() {
         let player = Player(name: "AI", type: .aiBalanced)
-        var tracker = BiddingTracker()
+        let tracker = BiddingTracker()
 
         // First 4 rounds - only penalties available
         let hand = [
@@ -206,3 +207,4 @@ final class AIDecisionEngineTests: XCTestCase {
         XCTAssertGreaterThan(goodScore, badScore)
     }
 }
+

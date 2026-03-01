@@ -180,15 +180,11 @@ class GameState: ObservableObject {
     // MARK: - Playing a Card
     func playCard(_ card: Card, by player: Player) {
         guard phase == .playing else { return }
-        guard !isProcessingTrick else {
-            print("⚠️ Trick processing in progress, ignoring card play")
-            return
-        }
+        guard !isProcessingTrick else { return }
         guard player.id == currentPlayer.id else { return }
         guard var round = currentRound else { return }
         guard player.playCard(card) != nil else { return }
 
-        isProcessingTrick = true
         playedCards.append(card)
 
         if round.currentTrick == nil {
@@ -230,7 +226,7 @@ class GameState: ObservableObject {
 
     // MARK: - Finalizing Trick
     private func finalizeTrick(forced: Bool) {
-        defer { isProcessingTrick = false }  // Her durumda flag'i sıfırla
+        defer { isProcessingTrick = false }
 
         guard var round = currentRound else { return }
         guard let trick = round.currentTrick else { return }

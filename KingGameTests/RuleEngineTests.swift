@@ -7,7 +7,7 @@ final class RuleEngineTests: XCTestCase {
 
     func testCanSelectTrumpInFirstFourRounds() {
         let player = Player(name: "Test", type: .human)
-        var tracker = BiddingTracker()
+        let tracker = BiddingTracker()
 
         // First 4 rounds: no trump allowed
         for round in 1...4 {
@@ -204,7 +204,7 @@ final class RuleEngineTests: XCTestCase {
             (player: Player(name: "P1", type: .aiBalanced), card: Card(suit: .diamonds, rank: .two))
         )
 
-        let round = Round(roundNumber: 1, contract: .trumpSpades, contractOwner: player)
+        var round = Round(roundNumber: 1, contract: .trumpSpades, contractOwner: player)
         round.trumpOpened = true
 
         let validCards = RuleEngine.validCards(
@@ -230,7 +230,7 @@ final class RuleEngineTests: XCTestCase {
         trick.cards.append(
             (player: Player(name: "P1", type: .aiBalanced), card: Card(suit: .hearts, rank: .two)))
 
-        let round = Round(roundNumber: 1, contract: .trumpSpades, contractOwner: player)
+        var round = Round(roundNumber: 1, contract: .trumpSpades, contractOwner: player)
         round.trumpOpened = true
 
         let validCards = RuleEngine.validCards(
@@ -244,3 +244,4 @@ final class RuleEngineTests: XCTestCase {
         XCTAssertTrue(validCards.allSatisfy { $0.suit == .spades })
     }
 }
+

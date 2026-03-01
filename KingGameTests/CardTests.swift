@@ -3,6 +3,7 @@ import XCTest
 @testable import KingGame
 
 // MARK: - Card Tests
+@MainActor
 final class CardTests: XCTestCase {
 
     func testCardInitialization() {
@@ -119,3 +120,4 @@ final class CardTests: XCTestCase {
         XCTAssertEqual(Rank.ace.shortName, "A")
     }
 }
+

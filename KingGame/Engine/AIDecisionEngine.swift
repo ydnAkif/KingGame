@@ -339,7 +339,7 @@ struct AIDecisionEngine {
     }
 
     // El için bir kontratın ne kadar "iyi" olduğunu hesaplar. Yüksek puan iyi, negatif puan kötüdür.
-    private static func evaluateContract(_ contract: ContractType, hand: [Card]) -> Double {
+    static func evaluateContract(_ contract: ContractType, hand: [Card]) -> Double {
         var score: Double = 0.0
 
         switch contract {
@@ -417,3 +417,4 @@ struct AIDecisionEngine {
         return score
     }
 }
+

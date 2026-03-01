@@ -2,7 +2,7 @@ import Combine
 import Foundation
 
 // MARK: - Player Type
-enum PlayerType {
+enum PlayerType: Equatable {
     case human
     case aiAggressive  // AI-Agresif  (risk eşiği: %35)
     case aiBalanced  // AI-Dengeli  (risk eşiği: %50)
@@ -10,7 +10,7 @@ enum PlayerType {
 }
 
 // MARK: - Player
-class Player: ObservableObject, Identifiable {
+class Player: ObservableObject, Identifiable, Equatable, Hashable {
     let id: UUID
     let name: String
     let type: PlayerType
@@ -96,3 +96,13 @@ class Player: ObservableObject, Identifiable {
         }
     }
 }
+extension Player {
+    static func == (lhs: Player, rhs: Player) -> Bool {
+        return lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+

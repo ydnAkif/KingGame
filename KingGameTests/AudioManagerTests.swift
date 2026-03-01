@@ -3,6 +3,7 @@ import XCTest
 @testable import KingGame
 
 // MARK: - AudioManager Tests (Mock)
+@MainActor
 final class AudioManagerTests: XCTestCase {
 
     var audioManager: AudioManager!
@@ -10,10 +11,12 @@ final class AudioManagerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         audioManager = AudioManager.shared
+        AudioManager.isTesting = true
     }
 
     override func tearDown() {
         audioManager = nil
+        AudioManager.isTesting = false
         super.tearDown()
     }
 
@@ -28,31 +31,38 @@ final class AudioManagerTests: XCTestCase {
     }
 
     func testVolumeRange() {
-        audioManager.volume = -0.5
-        XCTAssertEqual(audioManager.volume, 0.0)
+        // @Published properties need main thread
+        DispatchQueue.main.asyncAndWait {
+            self.audioManager.volume = -0.5
+            XCTAssertEqual(self.audioManager.volume, 0.0)
 
-        audioManager.volume = 1.5
-        XCTAssertEqual(audioManager.volume, 1.0)
+            self.audioManager.volume = 1.5
+            XCTAssertEqual(self.audioManager.volume, 1.0)
 
-        audioManager.volume = 0.5
-        XCTAssertEqual(audioManager.volume, 0.5)
+            self.audioManager.volume = 0.5
+            XCTAssertEqual(self.audioManager.volume, 0.5)
+        }
     }
 
     func testMuteToggle() {
-        audioManager.isMuted = false
-        audioManager.isMuted = true
-        XCTAssertTrue(audioManager.isMuted)
+        DispatchQueue.main.asyncAndWait {
+            self.audioManager.isMuted = false
+            self.audioManager.isMuted = true
+            XCTAssertTrue(self.audioManager.isMuted)
 
-        audioManager.isMuted = false
-        XCTAssertFalse(audioManager.isMuted)
+            self.audioManager.isMuted = false
+            XCTAssertFalse(self.audioManager.isMuted)
+        }
     }
 
     func testSoundEnabledToggle() {
-        audioManager.isSoundEnabled = true
-        XCTAssertTrue(audioManager.isSoundEnabled)
+        DispatchQueue.main.asyncAndWait {
+            self.audioManager.isSoundEnabled = true
+            XCTAssertTrue(self.audioManager.isSoundEnabled)
 
-        audioManager.isSoundEnabled = false
-        XCTAssertFalse(audioManager.isSoundEnabled)
+            self.audioManager.isSoundEnabled = false
+            XCTAssertFalse(self.audioManager.isSoundEnabled)
+        }
     }
 
     func testSoundTypeCount() {
@@ -78,18 +88,22 @@ final class AudioManagerTests: XCTestCase {
     }
 
     func testPlayWhenMuted() {
-        audioManager.isMuted = true
-        // Should return false when muted
-        // Note: Actual playback depends on file availability
-        let result = audioManager.play(.cardPlay)
-        XCTAssertFalse(result)
+        DispatchQueue.main.asyncAndWait {
+            self.audioManager.isMuted = true
+            // Should return false when muted
+            // Note: Actual playback depends on file availability
+            let result = self.audioManager.play(.cardPlay)
+            XCTAssertFalse(result)
+        }
     }
 
     func testPlayWhenSoundDisabled() {
-        audioManager.isMuted = false
-        audioManager.isSoundEnabled = false
-        let result = audioManager.play(.cardPlay)
-        XCTAssertFalse(result)
+        DispatchQueue.main.asyncAndWait {
+            self.audioManager.isMuted = false
+            self.audioManager.isSoundEnabled = false
+            let result = self.audioManager.play(.cardPlay)
+            XCTAssertFalse(result)
+        }
     }
 
     func testStopAllSounds() {
@@ -109,12 +123,14 @@ final class AudioManagerTests: XCTestCase {
 
     func testConvenienceMethods() {
         // These should not crash
-        audioManager.isMuted = true  // Prevent actual playback
+        DispatchQueue.main.asyncAndWait {
+            self.audioManager.isMuted = true  // Prevent actual playback
 
-        audioManager.playCardSound()
-        audioManager.playTrickWinSound()
-        audioManager.playKingSound()
-        audioManager.playErrorSound()
+            self.audioManager.playCardSound()
+            self.audioManager.playTrickWinSound()
+            self.audioManager.playKingSound()
+            self.audioManager.playErrorSound()
+        }
     }
 }
 

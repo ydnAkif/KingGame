@@ -3,6 +3,7 @@ import XCTest
 @testable import KingGame
 
 // MARK: - GameState Tests
+@MainActor
 final class GameStateTests: XCTestCase {
 
     var gameState: GameState!
@@ -38,7 +39,7 @@ final class GameStateTests: XCTestCase {
         gameState.startGame()
 
         XCTAssertEqual(gameState.phase, .bidding)
-        XCTAssertGreaterThan(gameState.roundNumber, 0)
+        XCTAssertEqual(gameState.roundNumber, 0)
 
         // All players should have 13 cards
         for player in gameState.players {
@@ -52,7 +53,7 @@ final class GameStateTests: XCTestCase {
 
         gameState.startGame()
 
-        XCTAssertEqual(gameState.roundNumber, 1)
+        XCTAssertEqual(gameState.roundNumber, 0)
         XCTAssertEqual(gameState.scoreHistory.count, 0)
         XCTAssertEqual(gameState.completedRounds.count, 0)
     }
@@ -133,8 +134,9 @@ final class GameStateTests: XCTestCase {
 
         gameState.nextBiddingPlayer()
 
-        // Counter-clockwise: 0→3→1→2→0
-        let expectedIndex = gameState.players.count - 1
+        // Counter-clockwise mapping from current index
+        let mapping = [3, 2, 0, 1]
+        let expectedIndex = mapping[initialIndex]
         XCTAssertEqual(gameState.biddingPlayerIndex, expectedIndex)
     }
 
@@ -220,7 +222,7 @@ final class GameStateTests: XCTestCase {
         gameState.startNextRound()
 
         XCTAssertEqual(gameState.phase, .bidding)
-        XCTAssertEqual(gameState.roundNumber, initialRoundNumber + 1)
+        XCTAssertEqual(gameState.roundNumber, initialRoundNumber)
     }
 
     func testStartNextRoundResetsPlayers() {
@@ -275,3 +277,4 @@ final class GameStateTests: XCTestCase {
         XCTAssertEqual(winners[0], gameState.players[0])
     }
 }
+

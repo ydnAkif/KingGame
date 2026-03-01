@@ -6,7 +6,18 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		5E0CF9832F54B87300C9A24F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5E9E1E002F5337790001F963 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5E9E1E072F5337790001F963;
+			remoteInfo = KingGame;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		5E0CF97F2F54B87300C9A24F /* KingGameTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KingGameTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E9E1E082F5337790001F963 /* KingGame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KingGame.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -21,6 +32,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		5E0CF9802F54B87300C9A24F /* KingGameTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = KingGameTests;
+			sourceTree = "<group>";
+		};
 		5E9E1E0A2F5337790001F963 /* KingGame */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -32,6 +48,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		5E0CF97C2F54B87300C9A24F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5E9E1E052F5337790001F963 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -46,6 +69,7 @@
 			isa = PBXGroup;
 			children = (
 				5E9E1E0A2F5337790001F963 /* KingGame */,
+				5E0CF9802F54B87300C9A24F /* KingGameTests */,
 				5E9E1E092F5337790001F963 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				5E9E1E082F5337790001F963 /* KingGame.app */,
+				5E0CF97F2F54B87300C9A24F /* KingGameTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -61,6 +86,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		5E0CF97E2F54B87300C9A24F /* KingGameTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5E0CF9872F54B87300C9A24F /* Build configuration list for PBXNativeTarget "KingGameTests" */;
+			buildPhases = (
+				5E0CF97B2F54B87300C9A24F /* Sources */,
+				5E0CF97C2F54B87300C9A24F /* Frameworks */,
+				5E0CF97D2F54B87300C9A24F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5E0CF9842F54B87300C9A24F /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				5E0CF9802F54B87300C9A24F /* KingGameTests */,
+			);
+			name = KingGameTests;
+			packageProductDependencies = (
+			);
+			productName = KingGameTests;
+			productReference = 5E0CF97F2F54B87300C9A24F /* KingGameTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		5E9E1E072F5337790001F963 /* KingGame */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5E9E1E132F53377B0001F963 /* Build configuration list for PBXNativeTarget "KingGame" */;
@@ -93,6 +141,10 @@
 				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
+					5E0CF97E2F54B87300C9A24F = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = 5E9E1E072F5337790001F963;
+					};
 					5E9E1E072F5337790001F963 = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -113,11 +165,19 @@
 			projectRoot = "";
 			targets = (
 				5E9E1E072F5337790001F963 /* KingGame */,
+				5E0CF97E2F54B87300C9A24F /* KingGameTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		5E0CF97D2F54B87300C9A24F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5E9E1E062F5337790001F963 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -128,6 +188,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		5E0CF97B2F54B87300C9A24F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5E9E1E042F5337790001F963 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -137,7 +204,55 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		5E0CF9842F54B87300C9A24F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5E9E1E072F5337790001F963 /* KingGame */;
+			targetProxy = 5E0CF9832F54B87300C9A24F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		5E0CF9852F54B87300C9A24F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3A8GAM82MT;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ydnakif.KingGameTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KingGame.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KingGame";
+			};
+			name = Debug;
+		};
+		5E0CF9862F54B87300C9A24F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3A8GAM82MT;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ydnakif.KingGameTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KingGame.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KingGame";
+			};
+			name = Release;
+		};
 		5E9E1E112F53377B0001F963 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -321,6 +436,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		5E0CF9872F54B87300C9A24F /* Build configuration list for PBXNativeTarget "KingGameTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5E0CF9852F54B87300C9A24F /* Debug */,
+				5E0CF9862F54B87300C9A24F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		5E9E1E032F5337790001F963 /* Build configuration list for PBXProject "KingGame" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
