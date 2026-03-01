@@ -10,7 +10,7 @@ enum PlayerType: Equatable {
 }
 
 // MARK: - Player
-class Player: ObservableObject, Identifiable, Equatable, Hashable {
+class Player: ObservableObject, Identifiable {
     let id: UUID
     let name: String
     let type: PlayerType
@@ -29,6 +29,16 @@ class Player: ObservableObject, Identifiable, Equatable, Hashable {
         self.id = UUID()
         self.name = name
         self.type = type
+    }
+
+    // MARK: - Equatable Conformance
+    static func == (lhs: Player, rhs: Player) -> Bool {
+        return lhs.id == rhs.id
+    }
+
+    // MARK: - Hashable Conformance
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 
     // MARK: - El İşlemleri
@@ -86,6 +96,11 @@ class Player: ObservableObject, Identifiable, Equatable, Hashable {
         return type != .human
     }
 
+    // Hesapçı AI mi?
+    var isCalculator: Bool {
+        return type == .aiCalculator
+    }
+
     // Risk eşiği
     var riskThreshold: Double {
         switch type {
@@ -96,13 +111,3 @@ class Player: ObservableObject, Identifiable, Equatable, Hashable {
         }
     }
 }
-extension Player {
-    static func == (lhs: Player, rhs: Player) -> Bool {
-        return lhs.id == rhs.id
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-}
-
