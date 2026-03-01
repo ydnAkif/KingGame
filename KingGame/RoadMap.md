@@ -92,15 +92,12 @@ KingGame/
 - [x] Aktif oyuncu vurgusu (altın çerçeve)
 - [x] 4 yön sistemi: Güney/Kuzey/Batı/Doğu
 - [x] Her oyuncunun kartı kendi önünde görünür
-- [x] Son kart 1 sn görünür, sonra löve kapanır
-- [x] Yenilen kartlar oyuncunun yanında görünür
-  - Kız Almaz: aldığı kızlar
-  - Erkek Almaz: aldığı K/J'ler
-  - Kupa Almaz / Rıfkı: aldığı kupalar
-  - El Almaz: löve sayısı
+- [x] Masadaki kartların toplanma animasyonu ve gecikmesi
+- [x] Yenilen kartlar oyuncunun yanında görünür (Mini kart destesi şeklinde)
 - [x] Bidding ekranında insan elini göster
+- [x] AI kontrat seçerken menüyü gizleyip "bekleniyor" pop-up'ı gösterme
 - [x] Oyun sonu skor geçmişi tablosu
-- [x] **Premium UI Güncellemesi:** Cam (Glassmorphism) efektleri, genişletilmiş kart boyutları, ortalanmış oyuncu plakaları ve lüks degrade (gradient) arka planlar eklendi.
+- [x] **Premium UI Güncellemesi:** Cam (Glassmorphism) efektleri, Mac Dock tarzı kart hover animasyonu, genişletilmiş kart boyutları, ortalanmış oyuncu plakaları ve lüks degrade (gradient) arka planlar eklendi.
 
 ---
 

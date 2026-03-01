@@ -32,34 +32,53 @@ struct PlayerHandView: View {
                 let cardAngle = indexOffset * 3.5  // Daha dengeli bir dönüş açısı
                 let yOffset = abs(indexOffset) * abs(indexOffset) * 1.5  // Kenarlara doğru parabolik bir düşüş
 
-                CardView(
-                    card: card,
-                    isPlayable: isPlayable,
-                    isSelected: isSelected,
-                    width: 100  // Tıklanabilir alan için biraz daha optimal genişlik
-                )
-                .onTapGesture { handleTap(card, isPlayable: isPlayable) }
-                .onHover { hovering in
-                    if isPlayable {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            if hovering {
-                                hoveredCard = card
-                            } else if hoveredCard?.id == card.id {
-                                hoveredCard = nil
+                // Dock efekti için yanındakileri de hafif büyüt
+                let distance = abs(
+                    Double(index)
+                        - (Double(
+                            sortedHand.firstIndex(where: { $0.id == hoveredCard?.id }) ?? -999)))
+                let scale: CGFloat = isHovered ? 1.15 : (distance == 1 ? 1.05 : 1.0)
+                let hoverYOffset: CGFloat = isHovered ? -25 : (distance == 1 ? -10 : 0)
+
+                ZStack {
+                    // Sabit etkileşim katmanı (görünmez) - Fare titremesini önler
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(width: 100, height: 140)
+                        .onHover { hovering in
+                            if isPlayable {
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
+                                    if hovering {
+                                        hoveredCard = card
+                                    } else if hoveredCard?.id == card.id {
+                                        hoveredCard = nil
+                                    }
+                                }
                             }
                         }
-                    }
+                        .onTapGesture { handleTap(card, isPlayable: isPlayable) }
+
+                    // Görsel kart katmanı
+                    CardView(
+                        card: card,
+                        isPlayable: isPlayable,
+                        isSelected: isSelected,
+                        width: 100
+                    )
+                    .allowsHitTesting(false)  // Tıklamaları sabit Rectangle'a bırak
+                    .overlay(
+                        isPlayable && !isSelected
+                            ? RoundedRectangle(cornerRadius: 8)
+                                .stroke(
+                                    Color.white.opacity(isHovered ? 0.8 : 0.3),
+                                    lineWidth: isHovered ? 2.5 : 1.5)
+                            : nil
+                    )
+                    .scaleEffect(scale)
+                    .offset(y: isSelected ? -40 : hoverYOffset)
                 }
-                .overlay(
-                    isPlayable && !isSelected
-                        ? RoundedRectangle(cornerRadius: 8)
-                            .stroke(
-                                Color.white.opacity(isHovered ? 0.8 : 0.3),
-                                lineWidth: isHovered ? 2.5 : 1.5)
-                        : nil
-                )
                 .rotationEffect(Angle(degrees: cardAngle), anchor: .bottom)
-                .offset(y: isSelected ? -30 : (isHovered ? -15 : yOffset))
+                .offset(y: yOffset)
                 .zIndex(isSelected || isHovered ? 100 : Double(index))
                 .transition(
                     .asymmetric(
@@ -68,7 +87,7 @@ struct PlayerHandView: View {
                     )
                 )
                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isSelected)
-                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isHovered)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: hoveredCard)
             }
         }
         .padding(.top, 40)  // Kalkan kartlar için üstten boşluk

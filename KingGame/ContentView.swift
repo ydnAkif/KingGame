@@ -40,19 +40,43 @@ struct ContentView: View {
                 // Oyun tahtası her zaman arkada durur
                 GameBoardView(gameState: gameState)
                     .blur(
-                        radius: (gameState.phase == .bidding || gameState.phase == .roundEnd
-                            || gameState.phase == .gameEnd) ? 15 : 0
+                        radius: (gameState.phase == .bidding && !gameState.biddingPlayer.isAI
+                            || gameState.phase == .roundEnd || gameState.phase == .gameEnd) ? 15 : 0
                     )
                     .disabled(gameState.phase != .playing)
                     .animation(.easeInOut(duration: 0.4), value: gameState.phase)
 
-                // İhale (Bidding) Modalı
+                // İhale (Bidding) Modalı - Sadece insan oyuncu için
                 if gameState.phase == .bidding {
-                    Color.black.opacity(0.2).ignoresSafeArea()  // Ekstra karartma
-                    BiddingView(gameState: gameState) { contract in
-                        gameState.selectContract(contract)
+                    if !gameState.biddingPlayer.isAI {
+                        Color.black.opacity(0.2).ignoresSafeArea()  // Ekstra karartma
+                        BiddingView(gameState: gameState) { contract in
+                            gameState.selectContract(contract)
+                        }
+                        .transition(.scale(scale: 0.85).combined(with: .opacity))
+                    } else {
+                        // AI seçerken gösterilecek şık küçük pop-up
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .goldLight))
+                                .scaleEffect(1.5)
+
+                            Text("\(gameState.biddingPlayer.name) kontrat seçiyor...")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                        .padding(24)
+                        .background(.ultraThinMaterial)
+                        .background(Color.black.opacity(0.6))
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(
+                                Color.goldMid.opacity(0.3), lineWidth: 1)
+                        )
+                        .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .animation(.spring(), value: gameState.phase)
                     }
-                    .transition(.scale(scale: 0.85).combined(with: .opacity))
                 }
 
                 // El Sonu (RoundEnd) Modalı

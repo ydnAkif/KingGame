@@ -3,11 +3,16 @@ import SwiftUI
 struct CardView: View {
     let card: Card
     var isPlayable: Bool = true
+    var isDimmed: Bool? = nil
     var isSelected: Bool = false
     var faceDown: Bool = false
     var width: CGFloat = 80
 
     var height: CGFloat { width * 1.4 }
+
+    var shouldDim: Bool {
+        return isDimmed ?? !isPlayable
+    }
 
     var body: some View {
         ZStack {
@@ -20,8 +25,8 @@ struct CardView: View {
         .frame(width: width, height: height)
         .scaleEffect(isSelected && !faceDown ? 1.05 : 1.0)
         .offset(y: isSelected && !faceDown ? -12 : 0)
-        .opacity(isPlayable ? 1.0 : 0.7)
-        .saturation(isPlayable ? 1.0 : 0.6)
+        .opacity(shouldDim ? 0.7 : 1.0)
+        .saturation(shouldDim ? 0.6 : 1.0)
         .animation(
             .interactiveSpring(response: 0.35, dampingFraction: 0.65, blendDuration: 0),
             value: isSelected

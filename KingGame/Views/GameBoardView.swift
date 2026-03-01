@@ -72,32 +72,32 @@ struct PlayerPenaltyCardsView: View {
         if let contract = contract {
             let penaltyCards = getPenaltyCards(for: contract)
             if !penaltyCards.isEmpty {
-                HStack(spacing: -12) {
+                HStack(spacing: -20) {
                     ForEach(penaltyCards, id: \.id) { card in
-                        CardView(card: card, isPlayable: false, width: 35)
+                        CardView(card: card, isPlayable: false, isDimmed: false, width: 48)
                             .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                     }
                 }
-                .padding(6)
+                .padding(8)
                 .background(.ultraThinMaterial)
-                .background(Color.black.opacity(0.3))
-                .cornerRadius(8)
+                .background(Color.black.opacity(0.4))
+                .cornerRadius(12)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8).stroke(
+                    RoundedRectangle(cornerRadius: 12).stroke(
                         Color.white.opacity(0.15), lineWidth: 1))
             } else if contract == .noTricks || contract == .lastTwo || contract.isTrump {
                 if player.tricksWon > 0 {
                     Text("\(player.tricksWon) EL")
-                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
                         .foregroundColor(
                             contract.isTrump ? Color.goldLight : Color.white.opacity(0.8)
                         )
-                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
                         .background(.ultraThinMaterial)
-                        .background(Color.black.opacity(0.3))
-                        .cornerRadius(8)
+                        .background(Color.black.opacity(0.4))
+                        .cornerRadius(12)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8).stroke(
+                            RoundedRectangle(cornerRadius: 12).stroke(
                                 Color.white.opacity(0.15), lineWidth: 1))
                 }
             }
