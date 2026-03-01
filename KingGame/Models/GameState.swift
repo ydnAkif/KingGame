@@ -75,7 +75,7 @@ class GameState: ObservableObject {
     func scheduleAIBiddingIfNeeded() {
         guard phase == .bidding, biddingPlayer.isAI else { return }
         let idx = biddingPlayerIndex
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             guard let self = self,
                   self.phase == .bidding,
                   self.biddingPlayerIndex == idx,
@@ -156,7 +156,7 @@ class GameState: ObservableObject {
         if card.isRifki && round.contract == .rifki {
             isProcessingTrick = true
             currentRound = round
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 self.finalizeTrick(&round, forced: true)
                 self.isProcessingTrick = false
             }
@@ -167,7 +167,7 @@ class GameState: ObservableObject {
         if count >= 4 {
             isProcessingTrick = true
             currentRound = round
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 self.finalizeTrick(&round, forced: false)
                 self.isProcessingTrick = false
             }
@@ -232,13 +232,13 @@ class GameState: ObservableObject {
     private func shouldEndEarly(round: Round) -> Bool {
         switch round.contract {
         case .noTricks, .lastTwo:
-            // Bu ikisi 13 löve oynanmak zorunda
+            // 13 löve oynanmak zorunda
             return false
 
         case .noHearts:
-            // Tüm 8 kupa alındıysa biter
+            // Tüm 13 kupa alındıysa biter, aksi halde 13 löve oynanır
             let heartsTaken = players.flatMap { $0.wonCards }.filter { $0.isHeart }.count
-            return heartsTaken >= 8
+            return heartsTaken >= 13
 
         case .noQueens:
             // Tüm 4 kız alındıysa biter
@@ -287,7 +287,7 @@ class GameState: ObservableObject {
         guard phase == .playing else { return }
         guard players[currentPlayerIndex].isAI else { return }
         let idx = currentPlayerIndex
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             guard let self = self,
                   self.phase == .playing,
                   self.currentPlayerIndex == idx,

@@ -2,73 +2,118 @@ import SwiftUI
 
 // MARK: - Renk Paleti
 extension Color {
-    static let woodDark  = Color(red: 0.35, green: 0.18, blue: 0.05)
-    static let woodMid   = Color(red: 0.55, green: 0.30, blue: 0.10)
+    static let woodDark = Color(red: 0.35, green: 0.18, blue: 0.05)
+    static let woodMid = Color(red: 0.55, green: 0.30, blue: 0.10)
     static let feltGreen = Color(red: 0.10, green: 0.42, blue: 0.15)
-    static let feltDark  = Color(red: 0.07, green: 0.30, blue: 0.10)
+    static let feltDark = Color(red: 0.07, green: 0.30, blue: 0.10)
     static let goldLight = Color(red: 1.00, green: 0.82, blue: 0.20)
-    static let goldMid   = Color(red: 0.90, green: 0.65, blue: 0.10)
-    static let goldDark  = Color(red: 0.70, green: 0.45, blue: 0.05)
+    static let goldMid = Color(red: 0.90, green: 0.65, blue: 0.10)
+    static let goldDark = Color(red: 0.70, green: 0.45, blue: 0.05)
     static let plateDark = Color(red: 0.12, green: 0.12, blue: 0.12)
 }
 
-// MARK: - Oyuncu Plakası
-struct PlayerPlate: View {
+// MARK: - Oyuncu Bilgi Paneli
+struct PlayerInfoPanel: View {
     let player: Player
     let isActive: Bool
-    let vertical: Bool
+    let contract: ContractType?
+    var showCards: Bool = true
 
     var body: some View {
-        HStack(spacing: 8) {
+        VStack(alignment: .center, spacing: 5) {
+            // İsim
             Text(player.name)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white)
-            Text("\(player.totalScore)")
-                .font(.system(size: 14, weight: .heavy, design: .monospaced))
-                .foregroundColor(player.totalScore >= 0 ? .green : Color(red:1, green:0.3, blue:0.3))
-            // El puanı (oyun sırasında)
-            if player.roundScore != 0 {
-                Text("(\(player.roundScore > 0 ? "+" : "")\(player.roundScore))")
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                    .foregroundColor(player.roundScore > 0 ? .green.opacity(0.7) : Color(red:1, green:0.4, blue:0.4).opacity(0.8))
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundColor(isActive ? Color.goldLight : .white.opacity(0.9))
+                .lineLimit(1)
+
+            // Puan satırı: toplam + el puanı
+            HStack(spacing: 6) {
+                Text("\(player.totalScore)")
+                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .foregroundColor(
+                        player.totalScore >= 0 ? .green : Color(red: 1, green: 0.4, blue: 0.4))
+                if player.roundScore != 0 {
+                    Text("(\(player.roundScore > 0 ? "+" : "")\(player.roundScore))")
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .foregroundColor(
+                            player.roundScore > 0
+                                ? .green.opacity(0.8) : Color(red: 1, green: 0.5, blue: 0.5))
+                }
+            }
+
+            // Aldığı el / yediği kartlar
+            if let contract = contract {
+                eatenLine(contract: contract)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 7)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.plateDark.opacity(0.9))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(isActive ? Color.goldLight : Color.white.opacity(0.15),
-                                lineWidth: isActive ? 2.5 : 0.5)
-                )
-                .shadow(color: isActive ? Color.goldLight.opacity(0.3) : .black.opacity(0.5), radius: isActive ? 8 : 4, x: 0, y: 2)
+            Color.white.opacity(0.05)
         )
-        .scaleEffect(isActive ? 1.04 : 1.0)
-        .animation(.easeInOut(duration: 0.3), value: isActive)
+        .background(
+            // Glassmorphism effect
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(
+                    isActive ? Color.goldLight : Color.white.opacity(0.15),
+                    lineWidth: isActive ? 2 : 0.5)
+        )
+        .shadow(
+            color: isActive ? Color.goldLight.opacity(0.3) : .black.opacity(0.5),
+            radius: isActive ? 8 : 4, x: 0, y: 3)
     }
-}
 
-// MARK: - Yenilen Kart Badge
-struct EatenCardBadge: View {
-    let text: String
-    let color: Color
+    @ViewBuilder
+    func eatenLine(contract: ContractType) -> some View {
+        switch contract {
+        case .noQueens:
+            badgeRow(cards: player.wonCards.filter { $0.isQueen })
+        case .noMales:
+            badgeRow(cards: player.wonCards.filter { $0.isMale })
+        case .noHearts:
+            badgeRow(cards: player.wonCards.filter { $0.isHeart })
+        case .rifki:
+            badgeRow(cards: player.wonCards.filter { $0.isRifki })
+        case .noTricks, .lastTwo:
+            if player.tricksWon > 0 {
+                Text("\(player.tricksWon) el")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+        default:
+            if player.tricksWon > 0 {
+                Text("\(player.tricksWon) el")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(.green.opacity(0.7))
+            }
+        }
+    }
 
-    var body: some View {
-        Text(text)
-            .font(.system(size: 12, weight: .heavy, design: .monospaced))
-            .foregroundColor(color)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.black.opacity(0.5))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 4)
-                            .stroke(color.opacity(0.3), lineWidth: 0.5)
-                    )
-            )
+    @ViewBuilder
+    func badgeRow(cards: [Card]) -> some View {
+        if !cards.isEmpty {
+            HStack(spacing: 2) {
+                ForEach(cards, id: \.id) { card in
+                    Text(card.shortName)
+                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                        .foregroundColor(
+                            card.suit.isRed
+                                ? Color(red: 1, green: 0.35, blue: 0.35) : .white.opacity(0.8)
+                        )
+                        .padding(.horizontal, 3)
+                        .padding(.vertical, 1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color.black.opacity(0.4))
+                        )
+                }
+            }
+        }
     }
 }
 
@@ -78,269 +123,242 @@ struct GameBoardView: View {
     private let dummyCard = Card(suit: .spades, rank: .two)
 
     func direction(for player: Player) -> TableDirection {
-        guard let i = gameState.players.firstIndex(where: { $0.id == player.id }) else { return .south }
-        switch i {
-        case 0: return .south
-        case 1: return .north
-        case 2: return .west
-        case 3: return .east
-        default: return .south
+        guard let i = gameState.players.firstIndex(where: { $0.id == player.id }) else {
+            return .south
         }
+        return [TableDirection.south, .north, .west, .east][i]
     }
 
     func player(at dir: TableDirection) -> Player {
         switch dir {
         case .south: return gameState.players[0]
         case .north: return gameState.players[1]
-        case .west:  return gameState.players[2]
-        case .east:  return gameState.players[3]
+        case .west: return gameState.players[2]
+        case .east: return gameState.players[3]
         }
     }
 
-    // MARK: - Yenilen Kartlar (contract'a göre)
-    @ViewBuilder
-    func eatenCardsView(for player: Player) -> some View {
-        if let round = gameState.currentRound {
-            switch round.contract {
-            case .noQueens:
-                let cards = player.wonCards.filter { $0.isQueen }
-                if !cards.isEmpty {
-                    HStack(spacing: 3) {
-                        ForEach(cards, id: \.id) { card in
-                            EatenCardBadge(
-                                text: card.shortName,
-                                color: card.suit.isRed ? Color(red:1, green:0.3, blue:0.3) : .white
-                            )
-                        }
-                    }
-                }
-            case .noMales:
-                let cards = player.wonCards.filter { $0.isMale }
-                if !cards.isEmpty {
-                    HStack(spacing: 3) {
-                        ForEach(cards, id: \.id) { card in
-                            EatenCardBadge(
-                                text: card.shortName,
-                                color: card.suit.isRed ? Color(red:1, green:0.3, blue:0.3) : .white
-                            )
-                        }
-                    }
-                }
-            case .noHearts, .rifki:
-                let cards = player.wonCards.filter { $0.isHeart }
-                if !cards.isEmpty {
-                    HStack(spacing: 3) {
-                        ForEach(cards, id: \.id) { card in
-                            EatenCardBadge(
-                                text: card.shortName,
-                                color: Color(red:1, green:0.3, blue:0.3)
-                            )
-                        }
-                    }
-                }
-            case .noTricks:
-                if player.tricksWon > 0 {
-                    EatenCardBadge(
-                        text: "\(player.tricksWon) el",
-                        color: .white.opacity(0.8)
-                    )
-                }
-            case .lastTwo:
-                if player.tricksWon > 0 {
-                    EatenCardBadge(
-                        text: "\(player.tricksWon) el",
-                        color: .white.opacity(0.8)
-                    )
-                }
-            default:
-                if player.tricksWon > 0 {
-                    EatenCardBadge(
-                        text: "\(player.tricksWon) el",
-                        color: .green.opacity(0.8)
-                    )
-                }
-            }
-        }
+    var currentContract: ContractType? {
+        gameState.currentRound?.contract
     }
 
+    // MARK: - Body
     var body: some View {
         GeometryReader { geo in
+            let tableW = geo.size.width - 240
+            let tableH = geo.size.height - 400
+            let tableX = geo.size.width / 2
+            let tableY = geo.size.height / 2 - 80
+
             ZStack {
-                woodBackground(size: geo.size)
+                // Katman 1: Lüks Kumarhane Arkaplanı (Koyu Yeşil Radiant Gradient + Vignette)
+                Color.black.ignoresSafeArea()
+                RadialGradient(
+                    colors: [Color(red: 0.1, green: 0.35, blue: 0.15), Color.black],
+                    center: .center,
+                    startRadius: 50,
+                    endRadius: geo.size.width * 0.8
+                ).ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    northZone
-                        .frame(height: 100)
-                        .padding(.top, 12)
+                // Katman 2: Masa Hattı (Hafif bir iç stroke veya gölge verebilir)
+                RoundedRectangle(cornerRadius: 32)
+                    .fill(Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 32)
+                            .strokeBorder(Color.white.opacity(0.05), lineWidth: 1)
+                    )
+                    .frame(width: max(tableW, 500), height: max(tableH, 300))
+                    .position(x: tableX, y: tableY)
 
-                    HStack(spacing: 0) {
-                        westZone
-                            .frame(width: 120)
-                        centerZone
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        eastZone
-                            .frame(width: 120)
-                    }
-                    .frame(maxHeight: .infinity)
-
-                    southZone
-                        .padding(.bottom, 10)
-                }
-
+                // Katman 3: Ust bilgi bandi
                 VStack {
                     topInfoBar
                     Spacer()
+                }
+
+                // Katman 4: Kuzey oyuncu — masanin ust kenarinda
+                VStack(spacing: 4) {
+                    northPanel
+                    northCards
+                }
+                .position(x: tableX, y: tableY - tableH / 2 + 10)
+
+                // Katman 5: Bati oyuncu — masanin sol kenarinda
+                HStack(spacing: 6) {
+                    westPanel
+                    westCards
+                }
+                .position(x: 80, y: tableY)
+
+                // Katman 6: Dogu oyuncu — masanin sag kenarinda
+                HStack(spacing: 6) {
+                    eastCards
+                    eastPanel
+                }
+                .position(x: geo.size.width - 80, y: tableY)
+
+                // Katman 7: Merkez — oynanan kartlar
+                TrickPileView(
+                    trick: gameState.currentRound?.currentTrick,
+                    directionOf: { direction(for: $0) }
+                )
+                .position(x: tableX, y: tableY)
+
+                // Katman 8: Guney — insan oyuncu (alt kisim)
+                VStack(spacing: 0) {
+                    Spacer()
+                    southZone
+                        .padding(.bottom, 8)
                 }
             }
         }
         .frame(minWidth: 1050, minHeight: 780)
     }
 
-    // MARK: - Arka Plan
-    func woodBackground(size: CGSize) -> some View {
-        ZStack {
-            Color.woodDark
-            RoundedRectangle(cornerRadius: 24)
-                .fill(RadialGradient(
-                    colors: [Color.feltGreen, Color.feltDark],
-                    center: .center, startRadius: 10, endRadius: 500
-                ))
-                .padding(EdgeInsets(top: 100, leading: 120, bottom: 290, trailing: 120))
-        }
-        .ignoresSafeArea()
-    }
-
-    // MARK: - Üst Bilgi Bandı
     var topInfoBar: some View {
         HStack {
             if let round = gameState.currentRound {
-                HStack(spacing: 8) {
-                    Text(round.contract.symbol).font(.system(size: 18))
-                    Text(round.contract.rawValue.uppercased())
-                        .font(.system(size: 12, weight: .heavy, design: .monospaced))
-                        .foregroundColor(.white)
-                    Text("El \(gameState.roundNumber)/20")
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.6))
+                HStack(spacing: 12) {
+                    HStack(spacing: 4) {
+                        Text(round.contract.symbol)
+                            .font(.system(size: 20))
+                            .foregroundColor(round.contract.isTrump ? Color.goldLight : .white)
+                        Text(round.contract.rawValue.uppercased())
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+
+                    Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
+
+                    Text("EL \(gameState.roundNumber)/20")
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.7))
+
                     if round.heartsOpened {
-                        Text("  ACIK")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(Color(red:1, green:0.4, blue:0.4))
+                        Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
+                        Text("♥ AÇIK")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(red: 1, green: 0.3, blue: 0.3))
                     }
                     if round.contract.isTrump && round.trumpOpened {
-                        Text("KOZ ACIK")
-                            .font(.system(size: 10, weight: .bold))
+                        Rectangle().fill(Color.white.opacity(0.2)).frame(width: 1, height: 16)
+                        Text("KOZ AÇIK")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
                             .foregroundColor(Color.goldLight)
                     }
                 }
-                .padding(.horizontal, 16).padding(.vertical, 6)
-                .background(Color.black.opacity(0.6)).cornerRadius(20)
+                .padding(.horizontal, 20).padding(.vertical, 8)
+                .background(.ultraThinMaterial)
+                .background(Color.black.opacity(0.3))
+                .cornerRadius(20)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20).stroke(
+                        Color.white.opacity(0.15), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
             }
             Spacer()
             trickCounterBar
         }
-        .padding(.horizontal, 16).padding(.top, 8)
+        .padding(.horizontal, 20).padding(.top, 12)
     }
 
     var trickCounterBar: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             ForEach(gameState.players) { p in
-                VStack(spacing: 1) {
-                    Text(p.name.components(separatedBy: "-").first?.prefix(3) ?? "")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundColor(.white.opacity(0.5))
-                    Text("\(p.tricksWon)")
-                        .font(.system(size: 15, weight: .bold, design: .monospaced))
-                        .foregroundColor(.white)
-                }
-                .frame(width: 38, height: 36)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(gameState.currentPlayer.id == p.id
-                              ? Color.goldMid.opacity(0.3) : Color.black.opacity(0.3))
-                        .overlay(RoundedRectangle(cornerRadius: 8)
-                            .stroke(gameState.currentPlayer.id == p.id
-                                    ? Color.goldLight : Color.clear, lineWidth: 1.5))
-                )
+                playerTrickCounter(for: p)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(Color.black.opacity(0.4)).cornerRadius(12)
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .background(.ultraThinMaterial)
+        .background(Color.black.opacity(0.3))
+        .cornerRadius(16)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.15), lineWidth: 1))
+        .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
+    }
+
+    @ViewBuilder
+    private func playerTrickCounter(for p: Player) -> some View {
+        let isCurrent = (gameState.currentPlayer.id == p.id)
+        let namePrefix = p.name.components(separatedBy: "-").first?.prefix(3) ?? ""
+
+        VStack(spacing: 2) {
+            Text(namePrefix)
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .foregroundColor(.white.opacity(0.6))
+                .lineLimit(1)
+            Text("\(p.tricksWon)")
+                .font(.system(size: 16, weight: .heavy, design: .monospaced))
+                .foregroundColor(isCurrent ? Color.goldLight : .white)
+        }
+        .frame(width: 44, height: 42)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(isCurrent ? Color.goldMid.opacity(0.15) : Color.white.opacity(0.05))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(
+                    isCurrent ? Color.goldLight.opacity(0.8) : Color.white.opacity(0.1),
+                    lineWidth: 1.5)
+        )
     }
 
     // MARK: - KUZEY
-    var northZone: some View {
+    var northPanel: some View {
         let p = player(at: .north)
         let isActive = gameState.currentPlayer.id == p.id
-        return VStack(spacing: 4) {
-            HStack(spacing: 8) {
-                PlayerPlate(player: p, isActive: isActive, vertical: false)
-                eatenCardsView(for: p)
+        return PlayerInfoPanel(player: p, isActive: isActive, contract: currentContract)
+    }
+
+    var northCards: some View {
+        let p = player(at: .north)
+        return ZStack {
+            ForEach(Array(0..<p.hand.count).reversed(), id: \.self) { i in
+                CardView(card: dummyCard, faceDown: true, width: 44)
+                    .rotationEffect(.degrees(Double(i - p.hand.count / 2) * 2.5 + 180))
+                    .offset(x: CGFloat(i - p.hand.count / 2) * 12)
             }
-            ZStack {
-                ForEach(Array(0..<p.hand.count).reversed(), id: \.self) { i in
-                    let angle = Double(i - p.hand.count/2) * 3.0
-                    CardView(card: dummyCard, faceDown: true, width: 44)
-                        .rotationEffect(.degrees(angle + 180))
-                        .offset(x: CGFloat(i - p.hand.count/2) * 12)
-                }
-            }
-            .frame(height: 65)
         }
+        .frame(width: 220, height: 70)
     }
 
     // MARK: - BATI
-    var westZone: some View {
+    var westPanel: some View {
         let p = player(at: .west)
         let isActive = gameState.currentPlayer.id == p.id
-        return VStack(spacing: 4) {
-            PlayerPlate(player: p, isActive: isActive, vertical: false)
-                .rotationEffect(.degrees(-90))
-                .fixedSize()
-            eatenCardsView(for: p)
-            ZStack {
-                ForEach(Array(0..<p.hand.count).reversed(), id: \.self) { i in
-                    CardView(card: dummyCard, faceDown: true, width: 40)
-                        .rotationEffect(.degrees(90))
-                        .offset(y: CGFloat(i - p.hand.count/2) * 10)
-                }
+        return PlayerInfoPanel(player: p, isActive: isActive, contract: currentContract)
+    }
+
+    var westCards: some View {
+        let p = player(at: .west)
+        return ZStack {
+            ForEach(Array(0..<p.hand.count).reversed(), id: \.self) { i in
+                CardView(card: dummyCard, faceDown: true, width: 40)
+                    .rotationEffect(.degrees(90))
+                    .offset(y: CGFloat(i - p.hand.count / 2) * 10)
             }
-            .frame(width: 80, height: 180)
         }
-        .frame(width: 120)
+        .frame(width: 70, height: 180)
     }
 
     // MARK: - DOGU
-    var eastZone: some View {
+    var eastPanel: some View {
         let p = player(at: .east)
         let isActive = gameState.currentPlayer.id == p.id
-        return VStack(spacing: 4) {
-            PlayerPlate(player: p, isActive: isActive, vertical: false)
-                .rotationEffect(.degrees(90))
-                .fixedSize()
-            eatenCardsView(for: p)
-            ZStack {
-                ForEach(Array(0..<p.hand.count).reversed(), id: \.self) { i in
-                    CardView(card: dummyCard, faceDown: true, width: 40)
-                        .rotationEffect(.degrees(-90))
-                        .offset(y: CGFloat(i - p.hand.count/2) * 10)
-                }
-            }
-            .frame(width: 80, height: 180)
-        }
-        .frame(width: 120)
+        return PlayerInfoPanel(player: p, isActive: isActive, contract: currentContract)
     }
 
-    // MARK: - MERKEZ
-    var centerZone: some View {
-        VStack(spacing: 12) {
-            Spacer()
-            TrickPileView(
-                trick: gameState.currentRound?.currentTrick,
-                directionOf: { direction(for: $0) }
-            )
-            Spacer()
+    var eastCards: some View {
+        let p = player(at: .east)
+        return ZStack {
+            ForEach(Array(0..<p.hand.count).reversed(), id: \.self) { i in
+                CardView(card: dummyCard, faceDown: true, width: 40)
+                    .rotationEffect(.degrees(-90))
+                    .offset(y: CGFloat(i - p.hand.count / 2) * 10)
+            }
         }
+        .frame(width: 70, height: 180)
     }
 
     // MARK: - GUNEY
@@ -348,17 +366,19 @@ struct GameBoardView: View {
         let human = player(at: .south)
         let isActive = gameState.currentPlayer.id == human.id && gameState.phase == .playing
 
-        let validCards: [Card] = isActive ? RuleEngine.validCards(
-            for: human,
-            trick: gameState.currentRound?.currentTrick,
-            round: gameState.currentRound ?? Round(roundNumber: 0, contract: .noTricks, contractOwner: human),
-            heartsOpened: gameState.currentRound?.heartsOpened ?? false
-        ) : []
+        let validCards: [Card] =
+            isActive
+            ? RuleEngine.validCards(
+                for: human,
+                trick: gameState.currentRound?.currentTrick,
+                round: gameState.currentRound
+                    ?? Round(roundNumber: 0, contract: .noTricks, contractOwner: human),
+                heartsOpened: gameState.currentRound?.heartsOpened ?? false
+            ) : []
 
         return VStack(spacing: 6) {
             HStack(spacing: 12) {
-                PlayerPlate(player: human, isActive: isActive, vertical: false)
-                eatenCardsView(for: human)
+                PlayerInfoPanel(player: human, isActive: isActive, contract: currentContract)
                 if isActive {
                     Text("KARTINIZI SECIN")
                         .font(.system(size: 11, weight: .heavy, design: .monospaced))

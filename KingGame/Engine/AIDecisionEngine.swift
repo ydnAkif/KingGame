@@ -192,61 +192,111 @@ struct AIDecisionEngine {
     
     // MARK: - Bidding Stratejisi
     static func selectContract(for player: Player, availableContracts: [ContractType], hand: [Card], tracker: BiddingTracker) -> ContractType {
+        let scoredContracts = availableContracts.map { contract in
+            (contract: contract, score: evaluateContract(contract, hand: hand))
+        }
+        
+        // Loglama eklenebilir
+        print("🤖 \(player.name) için Kontrat Skorları: \(scoredContracts.map { "\($0.contract.rawValue): \($0.score)" }.joined(separator: ", "))")
+        
         switch player.type {
         case .aiAggressive:
-            let trumps = availableContracts.filter { $0.isTrump }
-            if !trumps.isEmpty { return bestTrumpContract(for: hand, from: trumps) }
-            return availableContracts.randomElement() ?? availableContracts[0]
+            // Kosullara göre en agresife (genelde en yüksek koz) yönelir. Yoksa en yüksek ceza.
+            let sorted = scoredContracts.sorted { $0.score > $1.score }
+            if let bestTrump = sorted.first(where: { $0.contract.isTrump && $0.score > 20 }) {
+                return bestTrump.contract
+            }
+            return sorted.first?.contract ?? availableContracts[0]
+            
         case .aiBalanced:
-            return bestContract(for: hand, from: availableContracts)
+            // En yüksek score'u alan sözleşmeyi seç (hem koz hem ceza için en ideali)
+            return scoredContracts.max { $0.score < $1.score }?.contract ?? availableContracts[0]
+            
         case .aiCalculator:
-            return safestContract(for: hand, from: availableContracts)
+            // Sadece cezalarda riski en düşük (skoru en pozitif) olan güvenli sözleşmeyi seçmeye çalışır.
+            let penalties = scoredContracts.filter { $0.contract.isPenalty }
+            if !penalties.isEmpty {
+                return penalties.max { $0.score < $1.score }?.contract ?? availableContracts[0]
+            }
+            return scoredContracts.max { $0.score < $1.score }?.contract ?? availableContracts[0]
+            
         default:
-            return availableContracts[0]
+            return availableContracts.randomElement() ?? availableContracts[0]
         }
     }
     
-    private static func bestTrumpContract(for hand: [Card], from contracts: [ContractType]) -> ContractType {
-        var bestContract = contracts[0]
-        var maxCount = 0
-        for contract in contracts {
-            guard let suit = contract.trumpSuit else { continue }
-            let count = hand.filter { $0.suit == suit }.count
-            if count > maxCount { maxCount = count; bestContract = contract }
-        }
-        return bestContract
-    }
-    
-    private static func bestContract(for hand: [Card], from contracts: [ContractType]) -> ContractType {
-        let heartCount = hand.filter { $0.isHeart }.count
-        if heartCount <= 2 && contracts.contains(.noHearts) { return .noHearts }
-        let queenCount = hand.filter { $0.isQueen }.count
-        if queenCount == 0 && contracts.contains(.noQueens) { return .noQueens }
-        if !hand.contains(where: { $0.isRifki }) && contracts.contains(.rifki) { return .rifki }
-        return contracts.randomElement() ?? contracts[0]
-    }
-    
-    private static func safestContract(for hand: [Card], from contracts: [ContractType]) -> ContractType {
-        var safest = contracts[0]
-        var lowestRisk = Double.infinity
-        for contract in contracts {
-            let risk = contractRisk(for: hand, contract: contract)
-            if risk < lowestRisk { lowestRisk = risk; safest = contract }
-        }
-        return safest
-    }
-    
-    private static func contractRisk(for hand: [Card], contract: ContractType) -> Double {
+    // El için bir kontratın ne kadar "iyi" olduğunu hesaplar. Yüksek puan iyi, negatif puan kötüdür.
+    private static func evaluateContract(_ contract: ContractType, hand: [Card]) -> Double {
+        var score: Double = 0.0
+        
         switch contract {
-        case .noHearts:  return Double(hand.filter { $0.isHeart }.count) * 0.15
-        case .noQueens:  return Double(hand.filter { $0.isQueen }.count) * 0.3
-        case .noMales:   return Double(hand.filter { $0.isMale }.count) * 0.2
-        case .rifki:     return hand.contains(where: { $0.isRifki }) ? 1.0 : 0.1
-        case .lastTwo:   return 0.3
+        case .trumpSpades, .trumpHearts, .trumpDiamonds, .trumpClubs:
+            guard let trumpSuit = contract.trumpSuit else { return 0.0 }
+            let trumps = hand.filter { $0.suit == trumpSuit }
+            // Koz adedi (temel güç)
+            score += Double(trumps.count) * 10.0
+            // Güçlü kozlar ekstra puan
+            for card in trumps {
+                if card.rank == .ace { score += 15.0 }
+                if card.rank == .king { score += 10.0 }
+                if card.rank == .queen { score += 5.0 }
+            }
+            // Yan renk eksikliği (Void/Singleton avantajı koz için iyidir)
+            for suit in Suit.allCases where suit != trumpSuit {
+                let suitCount = hand.filter { $0.suit == suit }.count
+                if suitCount == 0 { score += 12.0 } // Çok iyi çakma imkanı
+                else if suitCount == 1 { score += 6.0 }
+            }
+            
+        case .noHearts:
+            let heartCount = hand.filter { $0.isHeart }.count
+            // Kupa yoksa harika! Yoksa her kupa eksi puan demektir.
+            score = 30.0 - Double(heartCount * 12)
+            // Kupa as ve papaz çok tehlikelidir kupa almazda
+            if hand.contains(where: { $0.isHeart && $0.rank == .ace }) { score -= 15.0 }
+            if hand.contains(where: { $0.isHeart && $0.rank == .king }) { score -= 10.0 }
+            
+        case .noQueens:
+            let queenCount = hand.filter { $0.isQueen }.count
+            // Sadece eldeki kızlara değil, as/papaz fazlalığına da bakmak lazım
+            score = 20.0 - Double(queenCount * 25)
+            let highCards = hand.filter { $0.rank == .ace || $0.rank == .king }.count
+            score -= Double(highCards * 5)
+            
+        case .noMales:
+            let maleCount = hand.filter { $0.isMale }.count
+            score = 20.0 - Double(maleCount * 20)
+            let aceCount = hand.filter { $0.rank == .ace }.count
+            score -= Double(aceCount * 8)
+            
+        case .rifki:
+            if hand.contains(where: { $0.isRifki }) {
+                // Rıfkı bizdeysek yüksek risk! (Ama uzun ve zayıf bir Kupa rengimiz varsa şansımız artabilir)
+                let heartCount = hand.filter { $0.isHeart }.count
+                score -= (50.0 - Double(heartCount * 3)) // Bir nebze toparlar.
+            } else {
+                score = 15.0
+                // Bizde Rıfkı yok ama ♥A veya ♥Q var ise risklidir
+                if hand.contains(where: { $0.isHeart && ($0.rank == .ace || $0.rank == .queen) }) {
+                   score -= 10.0
+                }
+            }
+            
+        case .lastTwo:
+            // Son ele düşük veya tek renk kalmalı
+            let lowCards = hand.filter { $0.rank.rawValue <= 6 }.count
+            score = Double(lowCards * 4)
+            // Tüm kağıtları eşit dağılımlı yüksekse çok tehlikeli
+            let highCards = hand.filter { $0.rank >= .jack }.count
+            score -= Double(highCards * 8)
+            
         case .noTricks:
+            let lowCards = hand.filter { $0.rank.rawValue <= 8 }.count
+            score = Double(lowCards * 5)
             let highCards = hand.filter { $0.rank >= .queen }.count
-            return Double(highCards) * 0.15
-        default: return 0.5
+            score -= Double(highCards * 15)
         }
+        
+        return score
     }
 }

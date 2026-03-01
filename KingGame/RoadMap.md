@@ -62,7 +62,7 @@ KingGame/
 ### Erken Bitiş
 - [x] Kız Almaz → 4 kız alındığında biter
 - [x] Erkek Almaz → 8 erkek (4K+4J) alındığında biter
-- [x] Kupa Almaz → 8 kupa alındığında biter
+- [x] Kupa Almaz → 13 kupa alındığında biter (13 löve oynanır)
 - [x] Rıfkı → ♥K alındığında biter
 - [x] El Almaz ve Son İki → mutlaka 13 löve oynanır
 
@@ -99,6 +99,7 @@ KingGame/
   - El Almaz: löve sayısı
 - [x] Bidding ekranında insan elini göster
 - [x] Oyun sonu skor geçmişi tablosu
+- [x] **Premium UI Güncellemesi:** Cam (Glassmorphism) efektleri, genişletilmiş kart boyutları, ortalanmış oyuncu plakaları ve lüks degrade (gradient) arka planlar eklendi.
 
 ---
 
