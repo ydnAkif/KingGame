@@ -123,8 +123,9 @@ struct RuleEngine {
         let sameSuit = hand.filter { $0.suit == leadSuit }
 
         if !sameSuit.isEmpty {
-            // Kız Almaz: masada As/K varsa aynı renkte Kız oynamak zorunlu
+            // Aynı renk varsa o renkten kural kontrolleri
             if round.contract == .noQueens {
+                // Kız Almaz: masada As/K varsa aynı renkte Kız oynamak zorunlu
                 let hasHighCard = trick.cards.contains {
                     $0.card.suit == leadSuit && ($0.card.rank == .ace || $0.card.rank == .king)
                 }
@@ -132,23 +133,50 @@ struct RuleEngine {
                     let queens = sameSuit.filter { $0.isQueen }
                     if !queens.isEmpty { return queens }
                 }
+            } else if round.contract == .noMales {
+                // Erkek Almaz: Masada daha yüksek kağıt varsa erkek atmak zorunlu
+                let hasAce = trick.cards.contains { $0.card.suit == leadSuit && $0.card.rank == .ace }
+                let hasKing = trick.cards.contains { $0.card.suit == leadSuit && $0.card.rank == .king }
+                let hasQueen = trick.cards.contains { $0.card.suit == leadSuit && $0.card.rank == .queen }
+
+                // Yerde As varsa Papaz zorunlu
+                if hasAce {
+                    let kings = sameSuit.filter { $0.rank == .king }
+                    if !kings.isEmpty { return kings }
+                }
+                // Yerde As, Papaz veya Kız varsa Vale zorunlu
+                if hasAce || hasKing || hasQueen {
+                    let jacks = sameSuit.filter { $0.rank == .jack }
+                    if !jacks.isEmpty { return jacks }
+                }
             }
             return sameSuit
         }
 
-        // Renk yoksa: Kız Almaz'da farklı renk Kız oynanabilir (zorunlu değil)
-        if round.contract == .noQueens {
+        // Renk yoksa: Ceza yedirme zorunlulukları
+        switch round.contract {
+        case .noHearts:
+            // Kupa Almaz: Renk yoksa kupa atmak zorunlu
+            let hearts = hand.filter { $0.suit == .hearts }
+            if !hearts.isEmpty { return hearts }
+            
+        case .noQueens:
+            // Kız Almaz: Renk yoksa kız atmak zorunlu
             let queens = hand.filter { $0.isQueen }
-            if !queens.isEmpty {
-                // İsteğe bağlı: Kız oynanabilir ama zorunlu değil
-                // Eğer masada As/K varsa ve elde başka Kız varsa, onu oynamak zorunlu
-                let hasHighCardInTrick = trick.cards.contains {
-                    $0.card.rank == .ace || $0.card.rank == .king
-                }
-                if hasHighCardInTrick {
-                    return queens  // Masada yüksek kart varsa sadece Kız oynanabilir
-                }
-            }
+            if !queens.isEmpty { return queens }
+            
+        case .noMales:
+            // Erkek Almaz: Renk yoksa erkek (Papaz/Vale) atmak zorunlu
+            let males = hand.filter { $0.isMale }
+            if !males.isEmpty { return males }
+            
+        case .rifki:
+            // Rıfkı: Renk yoksa Rıfkı (Kupa Papazı) atmak zorunlu
+            let rifki = hand.filter { $0.isRifki }
+            if !rifki.isEmpty { return rifki }
+            
+        default:
+            break
         }
 
         return hand

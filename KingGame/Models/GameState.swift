@@ -453,13 +453,10 @@ class GameState: ObservableObject {
 
     private func determineWinners() {
         let maxScore = players.map { $0.totalScore }.max() ?? 0
-        let winners = players.filter { $0.totalScore >= 0 }
-        gameWinners = winners.isEmpty ? players.filter { $0.totalScore == maxScore } : winners
-        let winnerIDs = Set(gameWinners.map { $0.id })
-        let losers = players.filter { !winnerIDs.contains($0.id) }
-        gameWinners.forEach { $0.totalScore += 12 / max(gameWinners.count, 1) }
-        losers.forEach { $0.totalScore -= 12 / max(losers.count, 1) }
-        gameWinners.max(by: { $0.totalScore < $1.totalScore })?.totalScore += 3
+        gameWinners = players.filter { $0.totalScore >= 0 }
+        if gameWinners.isEmpty {
+            gameWinners = players.filter { $0.totalScore == maxScore }
+        }
         message = "Oyun bitti! Kazananlar: \(gameWinners.map { $0.name }.joined(separator: ", "))"
     }
 
